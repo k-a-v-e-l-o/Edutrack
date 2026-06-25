@@ -24,19 +24,16 @@ app.use('/api/learner', require('./routes/learner.routes'));
 app.use('/api/parent',  require('./routes/parent.routes'));
 app.use('/api/teacher', require('./routes/teacher.routes'));
 app.use('/api/admin',   require('./routes/admin.routes'));
+app.use('/api/ai',      require('./routes/ai.routes'));
 
-// ─── Serve Frontend Pages ─────────────────────────────────────
-app.get('/login',           (req, res) => res.sendFile(path.join(__dirname, 'public/pages/auth/login.html')));
-app.get('/register',        (req, res) => res.sendFile(path.join(__dirname, 'public/pages/auth/register.html')));
-app.get('/learner/*',       (req, res) => res.sendFile(path.join(__dirname, 'public/pages/learner/dashboard.html')));
-app.get('/parent/*',        (req, res) => res.sendFile(path.join(__dirname, 'public/pages/parent/dashboard.html')));
-app.get('/teacher/*',       (req, res) => res.sendFile(path.join(__dirname, 'public/pages/teacher/dashboard.html')));
-app.get('/admin/*',         (req, res) => res.sendFile(path.join(__dirname, 'public/pages/admin/dashboard.html')));
+// ─── Serve Frontend (Single Page App) ─────────────────────────
+// All non-API routes return index.html — the frontend JS handles
+// role-based views, login, dashboards etc. on the client side.
+app.get(/^\/(?!api).*/, (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
+});
 
-// ─── Root redirect ────────────────────────────────────────────
-app.get('/', (req, res) => res.redirect('/login'));
-
-// ─── 404 Handler ──────────────────────────────────────────────
+// ─── 404 Handler (API routes only reach here) ─────────────────
 app.use((req, res) => {
   res.status(404).json({ success: false, message: 'Route not found' });
 });

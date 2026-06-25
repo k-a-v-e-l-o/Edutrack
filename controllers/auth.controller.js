@@ -99,4 +99,59 @@ const getMe = async (req, res) => {
   }
 };
 
-module.exports = { login, logout, getMe };
+const register = async (req, res) => {
+  try {
+    const { first_name, last_name, email, password, role, phone } = req.body;
+
+    if (!first_name || !last_name || !email || !password || !role)
+      return res.status(400).json({ success: false, message: 'All fields are required.' });
+
+    // Check if email already exists
+    const existing = await query(`SELECT id FROM users WHERE email = $1`, [email.toLowerCase().trim()]);
+    if (existing.rows.length > 0)
+      return res.status(409).json({ success: false, message: 'Email already registered.' });
+
+    const password_hash = await bcrypt.hash(password, 12);
+
+    const result = await query(
+      `INSERT INTO users (first_name, last_name, email, password_hash, role, phone, is_active)
+       VALUES ($1, $2, $3, $4, $5, $6, true) RETURNING id, email, role, first_name, last_name`,
+      [first_name.trim(), last_name.trim(), email.toLowerCase().trim(), password_hash, role, phone || null]
+    );
+
+    const user = result.rows[0];
+
+    const token = jwt.sign(
+      { id: user.id, email: user.email, role: user.role, first_name: user.first_name, last_name: user.last_name },
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
+    );
+
+    return res.status(201).json({
+      success: true,
+      message: 'Account created successfully.',
+      token,
+      user
+    });
+  } catch (err) {
+    console.error('Register error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+const saveFcmToken = async (req, res) => {
+  try {
+    const { fcm_token } = req.body;
+    if (!fcm_token)
+      return res.status(400).json({ success: false, message: 'FCM token required.' });
+
+    await query(`UPDATE users SET fcm_token = $1 WHERE id = $2`, [fcm_token, req.user.id]);
+
+    return res.status(200).json({ success: true, message: 'FCM token saved.' });
+  } catch (err) {
+    console.error('FCM token error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+module.exports = { login, logout, getMe, saveFcmToken, register };

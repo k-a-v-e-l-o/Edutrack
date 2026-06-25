@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "961788942238",
+    "project_id": "edutrack-947dc",
+    "storage_bucket": "edutrack-947dc.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:961788942238:android:569e94246d5e05e3b5688f",
+        "android_client_info": {
+          "package_name": "com.kabelo.edutrack"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCdCXgh3sS51ZYKlKQ1JevenMn8mAwMQU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

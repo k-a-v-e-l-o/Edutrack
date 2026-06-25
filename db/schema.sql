@@ -313,3 +313,183 @@ CREATE TRIGGER trg_fee_accounts_updated_at
   BEFORE UPDATE ON fee_accounts FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_events_updated_at
   BEFORE UPDATE ON events FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+-- ======================================================
+-- ADDITIONS: TABLES NEEDED FOR FULL FEATURE COVERAGE
+-- ======================================================
+
+-- ===================== ACADEMIC YEARS =====================
+-- Provides year-level scoping for terms across assessments,
+-- report cards, expenses, and feedback.
+CREATE TABLE academic_years (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  year       INTEGER NOT NULL UNIQUE,
+  start_date DATE NOT NULL,
+  end_date   DATE NOT NULL,
+  is_current BOOLEAN NOT NULL DEFAULT FALSE,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- Only one year can be current at a time
+CREATE UNIQUE INDEX idx_academic_years_current
+  ON academic_years(is_current) WHERE is_current = TRUE;
+
+-- ===================== ACHIEVEMENTS =====================
+CREATE TABLE achievements (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT,
+  icon        VARCHAR(50),
+  points      INTEGER NOT NULL DEFAULT 0,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE learner_achievements (
+  id             UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id     UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  achievement_id UUID NOT NULL REFERENCES achievements(id) ON DELETE CASCADE,
+  awarded_at     TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  awarded_by     UUID REFERENCES users(id) ON DELETE SET NULL,
+  UNIQUE (learner_id, achievement_id)
+);
+
+-- ===================== TEACHER FEEDBACK =====================
+CREATE TYPE feedback_sentiment AS ENUM ('positive', 'neutral', 'concern');
+
+CREATE TABLE teacher_feedback (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  teacher_id       UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  class_subject_id UUID REFERENCES class_subjects(id) ON DELETE SET NULL,
+  academic_year_id UUID REFERENCES academic_years(id) ON DELETE SET NULL,
+  term             term_number NOT NULL,
+  sentiment        feedback_sentiment NOT NULL DEFAULT 'neutral',
+  body             TEXT NOT NULL,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ===================== REPORT CARDS =====================
+CREATE TYPE report_card_status AS ENUM ('draft', 'published', 'archived');
+
+CREATE TABLE report_cards (
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  learner_id        UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  academic_year_id  UUID NOT NULL REFERENCES academic_years(id) ON DELETE RESTRICT,
+  term              term_number NOT NULL,
+  overall_average   NUMERIC(5,2),
+  class_rank        INTEGER,
+  attendance_pct    NUMERIC(5,2),
+  teacher_comment   TEXT,
+  principal_comment TEXT,
+  status            report_card_status NOT NULL DEFAULT 'draft',
+  published_at      TIMESTAMPTZ,
+  generated_by      UUID NOT NULL REFERENCES users(id),
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (learner_id, academic_year_id, term)
+);
+
+-- ===================== EXPENSES =====================
+CREATE TABLE expense_categories (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name        VARCHAR(100) NOT NULL UNIQUE,
+  description TEXT,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE expenses (
+  id               UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  category_id      UUID NOT NULL REFERENCES expense_categories(id) ON DELETE RESTRICT,
+  description      VARCHAR(255) NOT NULL,
+  amount           NUMERIC(10,2) NOT NULL,
+  expense_date     DATE NOT NULL DEFAULT CURRENT_DATE,
+  academic_year_id UUID REFERENCES academic_years(id) ON DELETE SET NULL,
+  recorded_by      UUID NOT NULL REFERENCES users(id),
+  notes            TEXT,
+  created_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at       TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ===================== DONATIONS =====================
+CREATE TABLE donations (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  donor_name    VARCHAR(255) NOT NULL,
+  amount        NUMERIC(10,2) NOT NULL,
+  donation_date DATE NOT NULL DEFAULT CURRENT_DATE,
+  purpose       VARCHAR(255),
+  reference     VARCHAR(255),
+  recorded_by   UUID NOT NULL REFERENCES users(id),
+  notes         TEXT,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ===================== SUPPORT TICKETS =====================
+CREATE TYPE ticket_status   AS ENUM ('open', 'in_progress', 'resolved', 'closed');
+CREATE TYPE ticket_priority AS ENUM ('low', 'medium', 'high', 'critical');
+
+CREATE TABLE support_tickets (
+  id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  raised_by   UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  assigned_to UUID REFERENCES users(id) ON DELETE SET NULL,
+  title       VARCHAR(255) NOT NULL,
+  description TEXT NOT NULL,
+  status      ticket_status   NOT NULL DEFAULT 'open',
+  priority    ticket_priority NOT NULL DEFAULT 'medium',
+  resolved_at TIMESTAMPTZ,
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ===================== EVENT RSVP =====================
+CREATE TABLE event_rsvp (
+  event_id UUID NOT NULL REFERENCES events(id) ON DELETE CASCADE,
+  user_id  UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  rsvp_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  PRIMARY KEY (event_id, user_id)
+);
+
+-- ===================== PASSWORD RESET TOKENS =====================
+CREATE TABLE password_reset_tokens (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash VARCHAR(255) NOT NULL UNIQUE,
+  expires_at TIMESTAMPTZ NOT NULL,
+  used_at    TIMESTAMPTZ,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ===================== USER SESSIONS =====================
+CREATE TABLE user_sessions (
+  id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  token_hash VARCHAR(255) NOT NULL UNIQUE,
+  ip_address VARCHAR(45),
+  user_agent TEXT,
+  expires_at TIMESTAMPTZ NOT NULL,
+  last_seen  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ===================== NEW INDEXES =====================
+CREATE INDEX idx_learner_achievements_learner ON learner_achievements(learner_id);
+CREATE INDEX idx_teacher_feedback_learner     ON teacher_feedback(learner_id);
+CREATE INDEX idx_teacher_feedback_teacher     ON teacher_feedback(teacher_id);
+CREATE INDEX idx_report_cards_learner         ON report_cards(learner_id);
+CREATE INDEX idx_expenses_category            ON expenses(category_id);
+CREATE INDEX idx_expenses_date                ON expenses(expense_date);
+CREATE INDEX idx_support_tickets_raised_by    ON support_tickets(raised_by);
+CREATE INDEX idx_support_tickets_open         ON support_tickets(status) WHERE status IN ('open', 'in_progress');
+CREATE INDEX idx_password_reset_user          ON password_reset_tokens(user_id);
+CREATE INDEX idx_user_sessions_user           ON user_sessions(user_id);
+CREATE INDEX idx_user_sessions_expires        ON user_sessions(expires_at);
+
+-- ===================== NEW TRIGGERS =====================
+CREATE TRIGGER trg_teacher_feedback_updated_at
+  BEFORE UPDATE ON teacher_feedback FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_report_cards_updated_at
+  BEFORE UPDATE ON report_cards FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_expenses_updated_at
+  BEFORE UPDATE ON expenses FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_support_tickets_updated_at
+  BEFORE UPDATE ON support_tickets FOR EACH ROW EXECUTE FUNCTION update_updated_at();
