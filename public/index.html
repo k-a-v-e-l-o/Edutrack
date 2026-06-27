@@ -3465,8 +3465,31 @@ function submitRegister(e) {
   if (!f.regTerms.checked) { err.textContent = 'You must accept the Terms of Service.'; return; }
 
   err.textContent = '';
-  closeRegister();
-  showToast(`Account created for ${firstName}! You can now sign in.`, 'success');
+
+  fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      password: pw,
+      role,
+      phone: f.regPhone.value.trim() || null
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      closeRegister();
+      showToast(`Account created for ${firstName}! You can now sign in.`, 'success');
+    } else {
+      err.textContent = data.message || 'Registration failed.';
+    }
+  })
+  .catch(() => {
+    err.textContent = 'Cannot reach server. Please try again.';
+  });
 }
 
 // ===================== TOAST =====================

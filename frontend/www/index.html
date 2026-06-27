@@ -1,12 +1,14 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>EduTrack School Management System</title>
+<title>EduTrack — School Management System</title>
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/i18next/23.10.1/i18next.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/i18next-http-backend/2.5.1/i18nextHttpBackend.min.js"></script>
 <style>
   /* ===================== DESIGN TOKENS ===================== */
   :root {
@@ -1307,58 +1309,58 @@
     <div class="role-tabs" id="roleTabs">
       <button class="role-tab active" data-role="teacher" onclick="selectRole(this)">
         <i class="fas fa-chalkboard-teacher"></i>
-        Teacher
+        <span data-i18n="login.roleTeacher">Teacher</span>
       </button>
       <button class="role-tab" data-role="learner" onclick="selectRole(this)">
         <i class="fas fa-user-graduate"></i>
-        Learner
+        <span data-i18n="login.roleLearner">Learner</span>
       </button>
       <button class="role-tab" data-role="parent" onclick="selectRole(this)">
         <i class="fas fa-users"></i>
-        Parent
+        <span data-i18n="login.roleParent">Parent</span>
       </button>
       <button class="role-tab" data-role="admin" onclick="selectRole(this)">
         <i class="fas fa-shield-alt"></i>
-        Admin
+        <span data-i18n="login.roleAdmin">Admin</span>
       </button>
     </div>
 
     <div class="role-indicator">
       <div class="role-dot" id="roleDot"></div>
-      Logging in as: <span id="roleLabel">Teacher</span>
+      <span data-i18n="login.loggingInAs">Logging in as:</span> <span id="roleLabel" data-i18n="login.roleTeacher">Teacher</span>
     </div>
 
-    <h1 class="login-title">Welcome back</h1>
-    <p class="login-sub">Sign in to your EduTrack account</p>
+    <h1 class="login-title" data-i18n="login.welcome">Welcome back</h1>
+    <p class="login-sub" data-i18n="login.subtitle">Sign in to your EduTrack account</p>
 
     <div class="form-group">
-      <label>Email Address</label>
+      <label data-i18n="login.email">Email Address</label>
       <div class="input-wrap">
         <i class="fas fa-envelope"></i>
-        <input type="email" id="loginEmail" placeholder="you@edu.local" oninput="validateLoginField(this)" />
+        <input type="email" id="loginEmail" placeholder="you@edu.local" data-i18n-placeholder="login.emailPlaceholder" oninput="validateLoginField(this)" />
       </div>
     </div>
 
     <div class="form-group">
-      <label>Password</label>
+      <label data-i18n="login.password">Password</label>
       <div class="input-wrap">
         <i class="fas fa-lock"></i>
-        <input type="password" id="loginPass" placeholder="Min 8 characters" oninput="validateLoginField(this)" />
+        <input type="password" id="loginPass" placeholder="••••••••" oninput="validateLoginField(this)" />
         <button type="button" class="pwd-toggle" onclick="togglePwd('loginPass',this)" tabindex="-1">
           <i class="fas fa-eye"></i>
         </button>
       </div>
     </div>
 
-    <div class="forgot"><a href="#" onclick="handleForgotPassword(event)">Forgot password?</a></div>
+    <div class="forgot"><a href="#" onclick="handleForgotPassword(event)" data-i18n="login.forgotPassword">Forgot password?</a></div>
 
       <button class="btn-login" onclick="doLogin()">
         <i class="fas fa-sign-in-alt" style="margin-right:6px"></i>
-        Sign In
+        <span data-i18n="login.signIn">Sign In</span>
       </button>
 
     <div class="register-link" id="registerLink">
-      Don't have an account? <a href="#" onclick="openRegister(event)">Create one</a>
+      <span data-i18n="login.noAccount">Don't have an account?</span> <a href="#" onclick="openRegister(event)" data-i18n="login.createOne">Create one</a>
     </div>
   </div>
 </div>
@@ -1374,7 +1376,7 @@
       <div class="logo-text">Edu<span>Track</span></div>
     </div>
     <h1 class="login-title">Create Account</h1>
-    <p class="login-sub" style="margin-bottom:20px">Join EduTrack â€” fill in your details below</p>
+    <p class="login-sub" style="margin-bottom:20px">Join EduTrack — fill in your details below</p>
 
     <form id="regForm" onsubmit="submitRegister(event)" novalidate>
       <div class="register-grid">
@@ -1415,7 +1417,7 @@
         <div class="input-wrap">
           <i class="fas fa-id-badge"></i>
           <select name="regRole" required onchange="validateRegisterField(this)" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px 12px 40px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;appearance:none;cursor:pointer">
-            <option value="">Select your role....</option>
+            <option value="">Select your role…</option>
             <option value="learner">Learner</option>
             <option value="parent">Parent / Guardian</option>
             <option value="teacher">Teacher</option>
@@ -1560,6 +1562,35 @@
   </div>
 </div>
 
+<!-- ===== SAGE AI ASSISTANT ===== -->
+<div id="sageWidget" class="hidden">
+  <button id="sageToggle" onclick="toggleSage()" data-tip="Ask Sage" style="position:fixed;bottom:24px;right:24px;width:56px;height:56px;border-radius:50%;background:var(--accent);color:#fff;border:none;cursor:pointer;font-size:22px;box-shadow:0 4px 20px var(--accent-glow);z-index:500;display:flex;align-items:center;justify-content:center;transition:all var(--transition)">
+    <i class="fas fa-wand-magic-sparkles"></i>
+  </button>
+
+  <div id="sagePanel" class="hidden" style="position:fixed;bottom:90px;right:24px;width:340px;max-width:calc(100vw - 32px);height:480px;max-height:calc(100vh - 120px);background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow);z-index:500;display:flex;flex-direction:column;overflow:hidden">
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px">
+      <div class="avatar" style="width:32px;height:32px;font-size:13px"><i class="fas fa-wand-magic-sparkles"></i></div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px">Sage</div>
+        <div style="font-size:11px;color:var(--muted)">Your study assistant</div>
+      </div>
+      <button class="topbar-btn" style="width:30px;height:30px" onclick="toggleSage()"><i class="fas fa-times"></i></button>
+    </div>
+
+    <div id="sageMessages" style="flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px">
+      <div style="background:var(--surface2);padding:10px 14px;border-radius:16px 16px 16px 4px;max-width:85%;font-size:13px;line-height:1.5;align-self:flex-start">
+        Hi, I'm Sage! Ask me about your subjects, get help with assignments, or request a study plan.
+      </div>
+    </div>
+
+    <div style="padding:12px;border-top:1px solid var(--border);display:flex;gap:8px">
+      <input type="text" id="sageInput" placeholder="Ask Sage..." onkeydown="if(event.key==='Enter')sendSageMessage()" style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;outline:none" />
+      <button class="btn btn-primary" onclick="sendSageMessage()" style="padding:10px 14px"><i class="fas fa-paper-plane"></i></button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===================== DB (MOCK DATA STORE) =====================
 const DB = {
@@ -1605,6 +1636,72 @@ const DB = {
 let currentRole = 'teacher';
 let currentPage = '';
 const charts = {};
+
+// ===================== i18N SETUP =====================
+const SUPPORTED_LANGUAGES = {
+  en:  { label: 'English',  flag: '🇬🇧' },
+  af:  { label: 'Afrikaans', flag: '🇿🇦' },
+  zu:  { label: 'isiZulu',  flag: '🇿🇦' },
+  xh:  { label: 'isiXhosa', flag: '🇿🇦' },
+  nso: { label: 'Sepedi',   flag: '🇿🇦' },
+};
+
+function applyTranslations() {
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    const translated = i18next.t(key);
+    if (translated && translated !== key) {
+      el.textContent = translated;
+    }
+  });
+
+  document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+    const key = el.getAttribute('data-i18n-placeholder');
+    const translated = i18next.t(key);
+    if (translated && translated !== key) {
+      el.setAttribute('placeholder', translated);
+    }
+  });
+
+  document.querySelectorAll('[data-i18n-html]').forEach(el => {
+    const key = el.getAttribute('data-i18n-html');
+    const translated = i18next.t(key);
+    if (translated && translated !== key) {
+      el.innerHTML = translated;
+    }
+  });
+
+  document.documentElement.lang = i18next.language;
+}
+
+function changeLanguage(lang) {
+  i18next.changeLanguage(lang, () => {
+    applyTranslations();
+    localStorage.setItem('edutrack-lang', lang);
+    const el = document.getElementById(`page-${currentPage}`);
+    if (el) { delete el.dataset.rendered; renderPage(currentPage); }
+    showToast(i18next.t('toast.languageChanged'), 'success');
+  });
+}
+
+function initI18n(callback) {
+  const savedLang = localStorage.getItem('edutrack-lang') || 'en';
+
+  i18next
+    .use(i18nextHttpBackend)
+    .init({
+      lng: savedLang,
+      fallbackLng: 'en',
+      supportedLngs: Object.keys(SUPPORTED_LANGUAGES),
+      backend: {
+        loadPath: '/locales/{{lng}}/translation.json'
+      }
+    }, (err) => {
+      if (err) console.error('i18next init error:', err);
+      applyTranslations();
+      if (callback) callback();
+    });
+}
 
 const roleConfig = {
   teacher: {
@@ -1683,13 +1780,17 @@ function selectRole(btn) {
   document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
   btn.classList.add('active');
   document.body.dataset.role = currentRole;
-  document.getElementById('roleLabel').textContent = btn.textContent.trim();
+
+  const roleKeys = { teacher: 'login.roleTeacher', learner: 'login.roleLearner', parent: 'login.roleParent', admin: 'login.roleAdmin' };
+  const roleLabelEl = document.getElementById('roleLabel');
+  roleLabelEl.setAttribute('data-i18n', roleKeys[currentRole]);
+  roleLabelEl.textContent = i18next.t(roleKeys[currentRole]);
 
   const adminRoles = ['teacher', 'admin'];
   document.getElementById('registerLink').style.display = adminRoles.includes(currentRole) ? 'none' : '';
 }
 
-const API_URL = 'http://192.168.8.176:5000/api';
+
 
 function clearValidationMarks() {
   document.querySelectorAll('.input-wrap input.invalid, .input-wrap select.invalid').forEach(i => i.classList.remove('invalid'));
@@ -1769,14 +1870,29 @@ async function doLogin() {
   const password = passwordInput.value;
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  if (!email) { emailInput.classList.add('invalid'); showToast('Enter your email address.', 'error'); return; }
-  if (!emailRegex.test(email)) { emailInput.classList.add('invalid'); showToast('Enter a valid email address.', 'error'); return; }
-  if (!password) { passwordInput.classList.add('invalid'); showToast('Enter your password.', 'error'); return; }
-  if (password.length < 8) { passwordInput.classList.add('invalid'); showToast('Password must be at least 8 characters.', 'error'); return; }
+  if (!email) {
+    emailInput.classList.add('invalid');
+    showToast('Enter your email address.', 'error');
+    return;
+  }
+  if (!emailRegex.test(email)) {
+    emailInput.classList.add('invalid');
+    showToast('Enter a valid email address.', 'error');
+    return;
+  }
+  if (!password) {
+    passwordInput.classList.add('invalid');
+    showToast('Enter your password.', 'error');
+    return;
+  }
+  if (password.length < 8) {
+    passwordInput.classList.add('invalid');
+    showToast('Password must be at least 8 characters.', 'error');
+    return;
+  }
 
   try {
-    showToast('Signing in...', 'info');
-    const res = await fetch(`${API_URL}/auth/login`, {
+    const res = await fetch('/api/auth/login', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -1793,22 +1909,12 @@ async function doLogin() {
     localStorage.setItem('edutrack_token', data.token);
     currentRole = data.user.role;
 
-    // Save FCM token after login
-    const fcmToken = localStorage.getItem('fcm_token');
-    if (fcmToken) {
-      fetch(`${API_URL}/auth/fcm-token`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + data.token },
-        body: JSON.stringify({ fcm_token: fcmToken })
-      }).catch(err => console.log('FCM token save failed:', err));
-    }
-
     document.getElementById('login-page').style.display = 'none';
     document.getElementById('app').style.display = 'flex';
     initApp();
     updateSageVisibility();
   } catch (err) {
-    showToast('Cannot reach server. Check your connection.', 'error');
+    showToast('Unable to reach the server. Please try again.', 'error');
   }
 }
 
@@ -1821,6 +1927,7 @@ function doLogout() {
   });
   document.getElementById('login-page').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
+  updateSageVisibility();
 }
 
 // ===================== APP INIT =====================
@@ -1963,29 +2070,29 @@ const pageRenderers = {
   'teacher-dashboard': (el) => {
     el.innerHTML = `
     <div class="page-header">
-      <h1>Good morning, Teacher ðŸ‘‹</h1>
-      <p>Thursday, 26 February 2026 Â· Grade 10 Mathematics</p>
+      <h1>Good morning, Teacher 👋</h1>
+      <p>Thursday, 26 February 2026 · Grade 10 Mathematics</p>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-users"></i></div>
-        <div class="stat-value">â€”</div>
+        <div class="stat-value">—</div>
         <div class="stat-label">Total Learners</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-clipboard-check"></i></div>
-        <div class="stat-value">â€”</div>
+        <div class="stat-value">—</div>
         <div class="stat-label">Attendance % Today</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-chart-bar"></i></div>
-        <div class="stat-value">â€”</div>
+        <div class="stat-value">—</div>
         <div class="stat-label">Class Average (%)</div>
       </div>
       <div class="stat-card">
         <div class="stat-icon"><i class="fas fa-exclamation-triangle"></i></div>
-        <div class="stat-value">â€”</div>
+        <div class="stat-value">—</div>
         <div class="stat-label">Needs Attention</div>
       </div>
     </div>
@@ -1994,7 +2101,7 @@ const pageRenderers = {
       <div class="card">
         <div class="card-header">
           <div class="card-title">Class Performance Trend</div>
-          <button class="card-action">This Term â–¾</button>
+          <button class="card-action">This Term ▾</button>
         </div>
         <div class="chart-wrap"><canvas id="tc-perfChart"></canvas></div>
       </div>
@@ -2069,7 +2176,7 @@ const pageRenderers = {
         }]
       );
       makeDoughnutChart('tc-subjectChart',
-        ['70â€“100%', '50â€“69%', '30â€“49%', '0â€“29%'],
+        ['70–100%', '50–69%', '30–49%', '0–29%'],
         [12, 11, 7, 4],
         [getAccent(), '#10b981', '#fbbf24', '#ef4444']
       );
@@ -2099,9 +2206,9 @@ const pageRenderers = {
     <div class="grid-2-1">
       <div class="card">
         <div class="card-header">
-          <div class="card-title">Mark Attendance â€” Today</div>
+          <div class="card-title">Mark Attendance — Today</div>
           <div style="display:flex;gap:8px">
-            <button class="btn btn-secondary" onclick="markAll('P')">âœ“ All Present</button>
+            <button class="btn btn-secondary" onclick="markAll('P')">✓ All Present</button>
             <button class="btn btn-primary" onclick="saveAttendance()"><i class="fas fa-save"></i> Save</button>
           </div>
         </div>
@@ -2150,7 +2257,7 @@ const pageRenderers = {
   'teacher-gradebook': (el) => {
     const subjects = DB.teacher.subjects;
     const learners = DB.teacher.learners.slice(0, 10);
-    // Fixed grades â€” no random, stable across renders until API replaces this
+    // Fixed grades — no random, stable across renders until API replaces this
     const fixedGrades = [
       [72,65,68,74,60],[58,62,55,70,63],[80,75,78,82,71],
       [45,50,48,52,44],[68,70,65,72,66],[55,58,60,54,57],
@@ -2169,7 +2276,7 @@ const pageRenderers = {
     </div>
 
     <div class="card">
-      <div class="card-header"><div class="card-title">Grade 10 â€” All Subjects</div></div>
+      <div class="card-header"><div class="card-title">Grade 10 — All Subjects</div></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>Learner</th>${subjects.map(s=>`<th>${s}</th>`).join('')}<th>Average</th><th>Grade</th></tr></thead>
@@ -2237,7 +2344,7 @@ const pageRenderers = {
           <span class="badge" style="background:${r.color}22;color:${r.color}">${r.type}</span>
         </div>
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">${r.name}</div>
-        <div style="font-size:11px;color:var(--muted)">${r.date} Â· ${r.size}</div>
+        <div style="font-size:11px;color:var(--muted)">${r.date} · ${r.size}</div>
         <div style="display:flex;gap:6px;margin-top:12px">
           <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px" onclick="showToast('Download coming soon','info')"><i class="fas fa-download"></i></button>
           <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;flex:1" onclick="showToast('Share coming soon','info')"><i class="fas fa-share"></i> Share</button>
@@ -2343,15 +2450,15 @@ const pageRenderers = {
   'learner-dashboard': (el) => {
     el.innerHTML = `
     <div class="page-header">
-      <h1>Hello, Learner! ðŸŽ’</h1>
-      <p>Keep pushing â€” you're doing great this term!</p>
+      <h1>Hello, Learner! 🎒</h1>
+      <p>Keep pushing — you're doing great this term!</p>
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-star"></i></div><div class="stat-value">68%</div><div class="stat-label">Overall Average</div><div class="stat-change up">â†‘ 3%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-value">93%</div><div class="stat-label">Attendance</div><div class="stat-change up">â†‘ 1%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-trophy"></i></div><div class="stat-value">7</div><div class="stat-label">Badges Earned</div><div class="stat-change up">â†‘ 2</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-tasks"></i></div><div class="stat-value">3</div><div class="stat-label">Pending Tasks</div><div class="stat-change down">â†‘ 1</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-star"></i></div><div class="stat-value">68%</div><div class="stat-label">Overall Average</div><div class="stat-change up">↑ 3%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-value">93%</div><div class="stat-label">Attendance</div><div class="stat-change up">↑ 1%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-trophy"></i></div><div class="stat-value">7</div><div class="stat-label">Badges Earned</div><div class="stat-change up">↑ 2</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-tasks"></i></div><div class="stat-value">3</div><div class="stat-label">Pending Tasks</div><div class="stat-change down">↑ 1</div></div>
     </div>
 
     <div class="grid-2">
@@ -2379,7 +2486,7 @@ const pageRenderers = {
           ${DB.learner.feedback.map(f=>`
           <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:10px;border-left:3px solid ${f.type==='positive'?'#10b981':'#fbbf24'}">
             <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <span style="font-size:13px;font-weight:600">${f.teacher} Â· <span style="color:var(--muted)">${f.subj}</span></span>
+              <span style="font-size:13px;font-weight:600">${f.teacher} · <span style="color:var(--muted)">${f.subj}</span></span>
               <span style="font-size:11px;color:var(--muted)">${f.date}</span>
             </div>
             <p style="font-size:13px;color:var(--muted);line-height:1.5">${f.msg}</p>
@@ -2495,10 +2602,10 @@ const pageRenderers = {
     <div class="grid-3">
       ${[
         {icon:'fa-file-pdf',name:'Algebra Notes Ch. 1-3',subj:'Mathematics',date:'20 Feb',type:'Notes',color:'#ef4444'},
-        {icon:'fa-file-alt',name:'Assignment 2 â€“ Quadratics',subj:'Mathematics',date:'18 Feb',type:'Assignment',color:'#fb923c'},
-        {icon:'fa-file-pdf',name:'Past Paper 2024 â€“ Maths',subj:'Mathematics',date:'15 Feb',type:'Past Paper',color:'#ef4444'},
+        {icon:'fa-file-alt',name:'Assignment 2 – Quadratics',subj:'Mathematics',date:'18 Feb',type:'Assignment',color:'#fb923c'},
+        {icon:'fa-file-pdf',name:'Past Paper 2024 – Maths',subj:'Mathematics',date:'15 Feb',type:'Past Paper',color:'#ef4444'},
         {icon:'fa-video',name:'Quadratic Equations Tutorial',subj:'Mathematics',date:'12 Feb',type:'Video',color:'#c084fc'},
-        {icon:'fa-file-powerpoint',name:'Cells and Organisms â€“ Slides',subj:'Science',date:'10 Feb',type:'Notes',color:'#4f8ef7'},
+        {icon:'fa-file-powerpoint',name:'Cells and Organisms – Slides',subj:'Science',date:'10 Feb',type:'Notes',color:'#4f8ef7'},
         {icon:'fa-book',name:'English Essay Framework',subj:'English',date:'8 Feb',type:'Notes',color:'#10b981'},
       ].map(r=>`
       <div class="card" style="cursor:pointer" onmouseover="this.style.transform='translateY(-3px)'" onmouseout="this.style.transform=''">
@@ -2507,7 +2614,7 @@ const pageRenderers = {
           <span class="badge badge-blue">${r.type}</span>
         </div>
         <div style="font-size:13px;font-weight:600;margin-bottom:4px">${r.name}</div>
-        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">${r.subj} Â· ${r.date}</div>
+        <div style="font-size:11px;color:var(--muted);margin-bottom:12px">${r.subj} · ${r.date}</div>
         <button class="btn btn-primary" style="width:100%" onclick="showToast('Download coming soon','info')"><i class="fas fa-download"></i> Download</button>
       </div>`).join('')}
     </div>`;
@@ -2529,21 +2636,21 @@ const pageRenderers = {
       <div class="card-header"><div class="card-title">My Badges</div></div>
       <div class="achievement-list">
         ${[
-          {icon:'ðŸ†',name:'Top Achiever',earned:true},{icon:'ðŸ“š',name:'Bookworm',earned:true},{icon:'âš¡',name:'Fast Learner',earned:true},
-          {icon:'ðŸŽ¯',name:'Bullseye',earned:true},{icon:'ðŸ”¥',name:'On Fire',earned:true},{icon:'â­',name:'Star Student',earned:true},
-          {icon:'ðŸ¤',name:'Team Player',earned:true},{icon:'ðŸ’¡',name:'Creative',earned:false},{icon:'ðŸ…',name:'Excellence',earned:false},
-          {icon:'ðŸŽ“',name:'Scholar',earned:false},{icon:'ðŸŒŸ',name:'Legend',earned:false},{icon:'ðŸš€',name:'Rocket',earned:false},
+          {icon:'🏆',name:'Top Achiever',earned:true},{icon:'📚',name:'Bookworm',earned:true},{icon:'⚡',name:'Fast Learner',earned:true},
+          {icon:'🎯',name:'Bullseye',earned:true},{icon:'🔥',name:'On Fire',earned:true},{icon:'⭐',name:'Star Student',earned:true},
+          {icon:'🤝',name:'Team Player',earned:true},{icon:'💡',name:'Creative',earned:false},{icon:'🏅',name:'Excellence',earned:false},
+          {icon:'🎓',name:'Scholar',earned:false},{icon:'🌟',name:'Legend',earned:false},{icon:'🚀',name:'Rocket',earned:false},
         ].map(a=>`
         <div class="achievement ${a.earned?'earned':'locked'}" data-tip="${a.earned?'Earned!':'Not yet earned'}">
           <div class="icon">${a.icon}</div>
           <div class="ach-name">${a.name}</div>
-          ${a.earned?'<span style="font-size:9px;color:var(--accent)">âœ“ Earned</span>':'<span style="font-size:9px;color:var(--muted)">ðŸ”’ Locked</span>'}
+          ${a.earned?'<span style="font-size:9px;color:var(--accent)">✓ Earned</span>':'<span style="font-size:9px;color:var(--muted)">🔒 Locked</span>'}
         </div>`).join('')}
       </div>
     </div>
 
     <div class="card" style="margin-top:20px">
-      <div class="card-header"><div class="card-title">Leaderboard â€” Grade 10</div></div>
+      <div class="card-header"><div class="card-title">Leaderboard — Grade 10</div></div>
       <div class="table-wrap">
         <table>
           <thead><tr><th>#</th><th>Learner</th><th>Points</th><th>Badges</th><th>Avg Mark</th></tr></thead>
@@ -2556,10 +2663,10 @@ const pageRenderers = {
               {rank:5,name:'Learner 6',pts:290,badges:6,avg:67,self:false},
             ].map(r=>`
             <tr style="${r.self?'background:var(--accent-soft)':''}">
-              <td><span style="font-size:16px">${r.rank===1?'ðŸ¥‡':r.rank===2?'ðŸ¥ˆ':r.rank===3?'ðŸ¥‰':r.rank}</span></td>
+              <td><span style="font-size:16px">${r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank}</span></td>
               <td><b>${r.name}</b> ${r.self?'<span class="badge badge-blue">You</span>':''}</td>
               <td><b>${r.pts}</b></td>
-              <td>${r.badges} ðŸ…</td>
+              <td>${r.badges} 🏅</td>
               <td>${r.avg}%</td>
             </tr>`).join('')}
           </tbody>
@@ -2577,13 +2684,13 @@ const pageRenderers = {
       ['Maths','English','History','Science','Afrikaans'],
       ['Science','Maths','English','Afrikaans','History'],
       ['History','Maths','Science','English','P.E.'],
-      ['â€”','â€”','â€”','â€”','â€”'],
+      ['—','—','—','—','—'],
       ['Maths','Science','P.E.','History','English'],
       ['English','Afrikaans','Maths','Science','History'],
-      ['â€”','â€”','â€”','â€”','â€”'],
+      ['—','—','—','—','—'],
       ['Afrikaans','P.E.','English','Maths','Science'],
     ];
-    const colors = {Maths:'#4f8ef7',Science:'#10b981',History:'#fb923c',English:'#c084fc',Afrikaans:'#fbbf24','P.E.':'#f43f5e','â€”':'transparent'};
+    const colors = {Maths:'#4f8ef7',Science:'#10b981',History:'#fb923c',English:'#c084fc',Afrikaans:'#fbbf24','P.E.':'#f43f5e','—':'transparent'};
 
     el.innerHTML = `
     <div class="page-header"><h1>My Timetable</h1><p>Your weekly class schedule</p></div>
@@ -2597,7 +2704,7 @@ const pageRenderers = {
             <tr>
               <td><div style="font-size:10px;color:var(--muted)">${time}</div><div style="font-size:11px;font-weight:600">${periodLabels[i]}</div></td>
               ${subjects[i].map(s => `
-              <td><div class="timetable-cell ${s==='â€”'?'empty':''}" style="${s!=='â€”'?`background:${colors[s]||'var(--surface2)'}22;border-color:${colors[s]||'transparent'};color:${colors[s]||'var(--muted)'}`:''}">${s}</div></td>`).join('')}
+              <td><div class="timetable-cell ${s==='—'?'empty':''}" style="${s!=='—'?`background:${colors[s]||'var(--surface2)'}22;border-color:${colors[s]||'transparent'};color:${colors[s]||'var(--muted)'}`:''}">${s}</div></td>`).join('')}
             </tr>`).join('')}
           </tbody>
         </table>
@@ -2608,12 +2715,12 @@ const pageRenderers = {
   /* ========== PARENT DASHBOARD ========== */
   'parent-dashboard': (el) => {
     el.innerHTML = `
-    <div class="page-header"><h1>Family Dashboard</h1><p>Monitoring Learner â€” Grade 10</p></div>
+    <div class="page-header"><h1>Family Dashboard</h1><p>Monitoring Learner — Grade 10</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chart-line"></i></div><div class="stat-value">68%</div><div class="stat-label">Overall Average</div><div class="stat-change up">â†‘ 3%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-value">93%</div><div class="stat-label">Attendance Rate</div><div class="stat-change up">â†‘ 1%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-credit-card"></i></div><div class="stat-value">R2,400</div><div class="stat-label">Fees Balance</div><div class="stat-change down">â†“ Due</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chart-line"></i></div><div class="stat-value">68%</div><div class="stat-label">Overall Average</div><div class="stat-change up">↑ 3%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-value">93%</div><div class="stat-label">Attendance Rate</div><div class="stat-change up">↑ 1%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-credit-card"></i></div><div class="stat-value">R2,400</div><div class="stat-label">Fees Balance</div><div class="stat-change down">↓ Due</div></div>
       <div class="stat-card"><div class="stat-icon"><i class="fas fa-bell"></i></div><div class="stat-value">2</div><div class="stat-label">New Notifications</div></div>
     </div>
 
@@ -2653,10 +2760,10 @@ const pageRenderers = {
       <div class="card">
         <div class="card-header"><div class="card-title">Upcoming Events</div></div>
         ${[
-          {day:'28',month:'Feb',name:'Maths Test â€“ Ch.5',time:'08:00â€“09:00'},
-          {day:'5',month:'Mar',name:'Parent-Teacher Evening',time:'17:00â€“19:00'},
+          {day:'28',month:'Feb',name:'Maths Test – Ch.5',time:'08:00–09:00'},
+          {day:'5',month:'Mar',name:'Parent-Teacher Evening',time:'17:00–19:00'},
           {day:'7',month:'Mar',name:'English Essay Due',time:'All Day'},
-          {day:'12',month:'Mar',name:'Sports Day',time:'09:00â€“15:00'},
+          {day:'12',month:'Mar',name:'Sports Day',time:'09:00–15:00'},
         ].map(e=>`
         <div class="event-item">
           <div class="event-date"><div class="day">${e.day}</div><div class="month">${e.month}</div></div>
@@ -2696,7 +2803,7 @@ const pageRenderers = {
           <div style="color:var(--muted);font-size:13px;margin-bottom:20px">Due 28 February 2026</div>
           <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:80%;background:#10b981"></div></div>
           <div style="font-size:12px;color:var(--muted);margin-top:6px">80% of annual fees paid</div>
-          <button class="btn btn-primary" style="margin-top:20px;width:100%" onclick="showToast('Payment gateway coming soon','info')"><i class="fas fa-credit-card"></i> Pay Now â€” R2,400</button>
+          <button class="btn btn-primary" style="margin-top:20px;width:100%" onclick="showToast('Payment gateway coming soon','info')"><i class="fas fa-credit-card"></i> Pay Now — R2,400</button>
         </div>
       </div>
       <div class="card">
@@ -2757,7 +2864,7 @@ const pageRenderers = {
             <div class="event-date"><div class="day">${e.day}</div><div class="month">${e.month}</div></div>
             <div style="flex:1">
               <div style="font-size:13px;font-weight:600">${e.name}</div>
-              <div style="font-size:12px;color:var(--muted)">${e.time} Â· ${e.venue}</div>
+              <div style="font-size:12px;color:var(--muted)">${e.time} · ${e.venue}</div>
               <span class="badge ${e.type==='Academic'?'badge-blue':e.type==='Meeting'?'badge-purple':e.type==='Sports'?'badge-green':'badge-orange'}" style="margin-top:4px">${e.type}</span>
             </div>
             <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;align-self:center" onclick="showToast('Added to calendar!','success')">+ Add</button>
@@ -2800,7 +2907,7 @@ const pageRenderers = {
         ].map(m=>`
         <div class="message-item">
           <div class="msg-avatar ${m.col}">${m.init}</div>
-          <div class="msg-info"><div class="sender">${m.name}</div><div class="preview">${m.subj} Â· ${m.msg}</div></div>
+          <div class="msg-info"><div class="sender">${m.name}</div><div class="preview">${m.subj} · ${m.msg}</div></div>
           <div class="msg-meta"><div class="time">${m.time}</div>${m.unread?`<div class="unread">${m.unread}</div>`:''}</div>
         </div>`).join('')}
       </div>
@@ -2883,15 +2990,15 @@ const pageRenderers = {
     <div class="page-header"><h1>Admin Overview</h1><p>School-wide management dashboard</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-value">â€”</div><div class="stat-label">Total Learners</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div><div class="stat-value">â€”</div><div class="stat-label">Staff Members</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><div class="stat-value">â€”</div><div class="stat-label">Annual Budget</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-percentage"></i></div><div class="stat-value">â€”</div><div class="stat-label">Fee Collection %</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-value">—</div><div class="stat-label">Total Learners</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div><div class="stat-value">—</div><div class="stat-label">Staff Members</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><div class="stat-value">—</div><div class="stat-label">Annual Budget</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-percentage"></i></div><div class="stat-value">—</div><div class="stat-label">Fee Collection %</div></div>
     </div>
 
     <div class="grid-2-1">
       <div class="card">
-        <div class="card-header"><div class="card-title">School Performance Trend</div><button class="card-action">2024â€“2026 â–¾</button></div>
+        <div class="card-header"><div class="card-title">School Performance Trend</div><button class="card-action">2024–2026 ▾</button></div>
         <div class="chart-wrap"><canvas id="ad-perfChart"></canvas></div>
       </div>
       <div class="card">
@@ -2971,10 +3078,10 @@ const pageRenderers = {
     </div>
 
     <div class="stats-grid" style="margin-bottom:20px">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-graduate"></i></div><div class="stat-value">â€”</div><div class="stat-label">Learners</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div><div class="stat-value">â€”</div><div class="stat-label">Teachers</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-value">â€”</div><div class="stat-label">Parents</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-shield-alt"></i></div><div class="stat-value">â€”</div><div class="stat-label">Admins</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-graduate"></i></div><div class="stat-value">—</div><div class="stat-label">Learners</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div><div class="stat-value">—</div><div class="stat-label">Teachers</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-value">—</div><div class="stat-label">Parents</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-shield-alt"></i></div><div class="stat-value">—</div><div class="stat-label">Admins</div></div>
     </div>
 
     <div class="card">
@@ -3016,10 +3123,10 @@ const pageRenderers = {
     <div class="page-header"><h1>Finance Dashboard</h1><p>Monitor payments, budget and financial health</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><div class="stat-value">R1.87M</div><div class="stat-label">Total Revenue YTD</div><div class="stat-change up">â†‘ 12%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-value">R1.42M</div><div class="stat-label">Fees Collected</div><div class="stat-change up">â†‘ 8%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div><div class="stat-value">R320K</div><div class="stat-label">Outstanding</div><div class="stat-change down">â†“ 3%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-value">R450K</div><div class="stat-label">Donations</div><div class="stat-change up">â†‘ 22%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><div class="stat-value">R1.87M</div><div class="stat-label">Total Revenue YTD</div><div class="stat-change up">↑ 12%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-value">R1.42M</div><div class="stat-label">Fees Collected</div><div class="stat-change up">↑ 8%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div><div class="stat-value">R320K</div><div class="stat-label">Outstanding</div><div class="stat-change down">↓ 3%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-value">R450K</div><div class="stat-label">Donations</div><div class="stat-change up">↑ 22%</div></div>
     </div>
 
     <div class="grid-2">
@@ -3040,9 +3147,9 @@ const pageRenderers = {
           <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Balance</th><th>Status</th></tr></thead>
           <tbody>
             ${[
-              {date:'26 Feb',desc:'School Fees â€“ Parent',cat:'Fees',amt:'+R3,000',bal:'R1.87M',status:'Received'},
+              {date:'26 Feb',desc:'School Fees – Parent',cat:'Fees',amt:'+R3,000',bal:'R1.87M',status:'Received'},
               {date:'25 Feb',desc:'Electricity Bill',cat:'Utilities',amt:'-R12,400',bal:'R1.86M',status:'Paid'},
-              {date:'24 Feb',desc:'Corporate Donation â€“ XYZ Ltd',cat:'Donation',amt:'+R50,000',bal:'R1.87M',status:'Received'},
+              {date:'24 Feb',desc:'Corporate Donation – XYZ Ltd',cat:'Donation',amt:'+R50,000',bal:'R1.87M',status:'Received'},
               {date:'23 Feb',desc:'Staff Salaries Feb',cat:'Payroll',amt:'-R420,000',bal:'R1.82M',status:'Paid'},
               {date:'22 Feb',desc:'Science Lab Equipment',cat:'Capital',amt:'-R28,000',bal:'R2.24M',status:'Paid'},
             ].map(t=>`<tr>
@@ -3081,10 +3188,10 @@ const pageRenderers = {
     <div class="page-header"><h1>School-Wide Analytics</h1><p>Performance insights across all grades and subjects</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-graduation-cap"></i></div><div class="stat-value">70%</div><div class="stat-label">School Average</div><div class="stat-change up">â†‘ 4%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-graduation-cap"></i></div><div class="stat-value">70%</div><div class="stat-label">School Average</div><div class="stat-change up">↑ 4%</div></div>
       <div class="stat-card"><div class="stat-icon"><i class="fas fa-chart-line"></i></div><div class="stat-value">+8.2%</div><div class="stat-label">Year-on-Year Growth</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-medal"></i></div><div class="stat-value">96%</div><div class="stat-label">Pass Rate</div><div class="stat-change up">â†‘ 2%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-award"></i></div><div class="stat-value">12</div><div class="stat-label">Distinctions</div><div class="stat-change up">â†‘ 4</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-medal"></i></div><div class="stat-value">96%</div><div class="stat-label">Pass Rate</div><div class="stat-change up">↑ 2%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-award"></i></div><div class="stat-value">12</div><div class="stat-label">Distinctions</div><div class="stat-change up">↑ 4</div></div>
     </div>
 
     <div class="grid-2">
@@ -3214,7 +3321,7 @@ const pageRenderers = {
           <thead><tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Details</th><th>IP Address</th><th>Status</th></tr></thead>
           <tbody>
             ${[
-              {time:'2026-02-26 09:42:11',user:'Teacher',role:'Teacher',action:'Grade Updated',detail:'Learner â€“ Maths 72%',ip:'192.168.1.22',status:'Success'},
+              {time:'2026-02-26 09:42:11',user:'Teacher',role:'Teacher',action:'Grade Updated',detail:'Learner – Maths 72%',ip:'192.168.1.22',status:'Success'},
               {time:'2026-02-26 09:30:05',user:'Administrator',role:'Admin',action:'User Added',detail:'New teacher: Teacher',ip:'192.168.1.1',status:'Success'},
               {time:'2026-02-26 09:15:33',user:'Parent',role:'Parent',action:'Login',detail:'Via web portal',ip:'41.21.12.55',status:'Success'},
               {time:'2026-02-26 08:55:20',user:'Unknown',role:'N/A',action:'Failed Login',detail:'Invalid credentials (3x)',ip:'172.16.0.12',status:'Failed'},
@@ -3278,7 +3385,7 @@ function sendMessage() {
 }
 
 function toggleNotifications() {
-  showToast('3 new notifications â€” check your inbox', 'info');
+  showToast('3 new notifications — check your inbox', 'info');
 }
 
 // ===================== PASSWORD TOGGLE =====================
@@ -3316,7 +3423,7 @@ function closeRegister() {
   document.getElementById('regError').textContent = '';
   clearValidationMarks();
 }
-async function submitRegister(e) {
+function submitRegister(e) {
   e.preventDefault();
   clearValidationMarks();
   const f = e.target;
@@ -3358,29 +3465,31 @@ async function submitRegister(e) {
   if (!f.regTerms.checked) { err.textContent = 'You must accept the Terms of Service.'; return; }
 
   err.textContent = '';
-  try {
-    const res = await fetch(`${API_URL}/auth/register`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        first_name: firstName,
-        last_name: lastName,
-        email,
-        password: pw,
-        role,
-        phone: f.regPhone.value.trim() || null
-      })
-    });
-    const data = await res.json();
-    if (!data.success) {
+
+  fetch('/api/auth/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      first_name: firstName,
+      last_name: lastName,
+      email,
+      password: pw,
+      role,
+      phone: f.regPhone.value.trim() || null
+    })
+  })
+  .then(r => r.json())
+  .then(data => {
+    if (data.success) {
+      closeRegister();
+      showToast(`Account created for ${firstName}! You can now sign in.`, 'success');
+    } else {
       err.textContent = data.message || 'Registration failed.';
-      return;
     }
-    closeRegister();
-    showToast(`Account created for ${firstName}! You can now sign in.`, 'success');
-  } catch (e) {
-    err.textContent = 'Cannot reach server. Check your connection.';
-  }
+  })
+  .catch(() => {
+    err.textContent = 'Cannot reach server. Please try again.';
+  });
 }
 
 // ===================== TOAST =====================
@@ -3623,7 +3732,7 @@ pageRenderers['profile'] = (el) => {
         <div class="settings-section-title"><i class="fas fa-cog" style="color:var(--accent)"></i> Quick Actions</div>
         <div style="display:flex;flex-direction:column;gap:8px">
           <button class="btn btn-secondary" style="justify-content:flex-start" onclick="navigate('settings')"><i class="fas fa-cog"></i> Account Settings</button>
-          <button class="btn btn-secondary" style="justify-content:flex-start" onclick="showToast('Downloading your dataâ€¦','info')"><i class="fas fa-download"></i> Export My Data</button>
+          <button class="btn btn-secondary" style="justify-content:flex-start" onclick="showToast('Downloading your data…','info')"><i class="fas fa-download"></i> Export My Data</button>
           <button class="btn btn-secondary" style="justify-content:flex-start;color:#ef4444" onclick="doLogout()"><i class="fas fa-sign-out-alt"></i> Sign Out</button>
         </div>
       </div>
@@ -3696,53 +3805,100 @@ function updateThemeIcons() {
   updateThemeIcons();
 })();
 
+// Initialize translations on page load
+initI18n();
+
 // Make navigate globally accessible for onclick handlers
 window.navigate = navigate;
 
-// ===================== PUSH NOTIFICATIONS =====================
-async function initPushNotifications() {
+// ===================== SAGE AI ASSISTANT =====================
+function toggleSage() {
+  document.getElementById('sagePanel').classList.toggle('hidden');
+}
+
+function appendSageMessage(text, fromUser) {
+  const box = document.getElementById('sageMessages');
+  const bubble = document.createElement('div');
+  bubble.style.maxWidth = '85%';
+  bubble.style.fontSize = '13px';
+  bubble.style.lineHeight = '1.5';
+  bubble.style.padding = '10px 14px';
+  bubble.style.whiteSpace = 'pre-wrap';
+  if (fromUser) {
+    bubble.style.background = 'var(--accent)';
+    bubble.style.color = '#fff';
+    bubble.style.borderRadius = '16px 16px 4px 16px';
+    bubble.style.alignSelf = 'flex-end';
+  } else {
+    bubble.style.background = 'var(--surface2)';
+    bubble.style.borderRadius = '16px 16px 16px 4px';
+    bubble.style.alignSelf = 'flex-start';
+  }
+  bubble.textContent = text;
+  box.appendChild(bubble);
+  box.scrollTop = box.scrollHeight;
+}
+
+let sageHistory = [];
+
+async function sendSageMessage() {
+  const input = document.getElementById('sageInput');
+  const message = input.value.trim();
+  if (!message) return;
+
+  appendSageMessage(message, true);
+  input.value = '';
+
+  const thinking = document.createElement('div');
+  thinking.id = 'sageThinking';
+  thinking.style.alignSelf = 'flex-start';
+  thinking.style.fontSize = '12px';
+  thinking.style.color = 'var(--muted)';
+  thinking.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Sage is thinking...';
+  document.getElementById('sageMessages').appendChild(thinking);
+  document.getElementById('sageMessages').scrollTop = document.getElementById('sageMessages').scrollHeight;
+
   try {
-    const { PushNotifications } = window.Capacitor.Plugins;
-    
-    if (!PushNotifications) {
-      console.log('Push Notifications not available');
+    const token = localStorage.getItem('edutrack_token');
+    const res = await fetch('/api/ai/chat', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer ' + token
+      },
+      body: JSON.stringify({ message, history: sageHistory })
+    });
+
+    const data = await res.json();
+    document.getElementById('sageThinking')?.remove();
+
+    if (!data.success) {
+      appendSageMessage(data.message || 'Sorry, something went wrong.', false);
       return;
     }
 
-    const permission = await PushNotifications.requestPermissions();
-    
-    if (permission.receive === 'granted') {
-      await PushNotifications.register();
-    }
-
-    PushNotifications.addListener('registration', (token) => {
-      console.log('FCM Token:', token.value);
-      localStorage.setItem('fcm_token', token.value);
-    });
-
-    PushNotifications.addListener('pushNotificationReceived', (notification) => {
-      alert(`📩 ${notification.title}\n${notification.body}`);
-    });
-
-    PushNotifications.addListener('pushNotificationActionPerformed', (action) => {
-      console.log('Notification tapped:', action.notification.data);
-    });
-
+    appendSageMessage(data.reply, false);
+    sageHistory.push({ role: 'user', content: message });
+    sageHistory.push({ role: 'assistant', content: data.reply });
   } catch (err) {
-    console.error('Push notification error:', err);
+    document.getElementById('sageThinking')?.remove();
+    appendSageMessage('Sage is currently unavailable. Please try again later.', false);
   }
 }
 
-document.addEventListener('deviceready', initPushNotifications);
-window.addEventListener('load', () => {
-  if (window.Capacitor) initPushNotifications();
-});
+// Show Sage only for learners, once logged in
+function updateSageVisibility() {
+  const widget = document.getElementById('sageWidget');
+  if (currentRole === 'learner' && document.getElementById('app').style.display !== 'none') {
+    widget.classList.remove('hidden');
+  } else {
+    widget.classList.add('hidden');
+  }
+}
 
 </script>
 </body>
 </html>
-
-
 
 
 
