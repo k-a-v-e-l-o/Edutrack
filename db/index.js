@@ -14,4 +14,6 @@ pool.connect((err, client, release) => {
   console.log('✅ Connected to Supabase database');
 });
 
-module.exports = pool;
+const query = (text, params) => pool.query(text, params);
+
+module.exports = { pool, query };
