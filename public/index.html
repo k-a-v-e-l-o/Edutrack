@@ -2256,15 +2256,8 @@ const pageRenderers = {
   /* ========== TEACHER GRADEBOOK ========== */
   'teacher-gradebook': (el) => {
     const subjects = DB.teacher.subjects;
-    const learners = DB.teacher.learners.slice(0, 10);
-    // Fixed grades — no random, stable across renders until API replaces this
-    const fixedGrades = [
-      [72,65,68,74,60],[58,62,55,70,63],[80,75,78,82,71],
-      [45,50,48,52,44],[68,70,65,72,66],[55,58,60,54,57],
-      [78,80,76,82,74],[62,60,58,65,61],[70,72,68,75,69],
-      [50,48,52,46,53]
-    ];
-    const grades = fixedGrades;
+    const learners = [];
+    const grades = [];
 
     el.innerHTML = `
     <div class="page-header"><h1>Gradebook</h1><p>Record and update learner marks</p></div>
@@ -2374,13 +2367,13 @@ const pageRenderers = {
       <div class="card messages-chat-panel" style="display:flex;flex-direction:column">
         <div class="card-header">
           <div style="display:flex;align-items:center;gap:10px">
-            <div class="msg-avatar av-3" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700">TK</div>
-            <div><div style="font-weight:600">Parent</div><div style="font-size:11px;color:var(--muted)">Parent of Learner <span class="online-dot"></span></div></div>
+            <div class="msg-avatar av-3" style="width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-weight:700">—</div>
+            <div><div style="font-weight:600">—</div><div style="font-size:11px;color:var(--muted)">Select a conversation</div></div>
           </div>
         </div>
         <div class="chat-body" style="flex:1;overflow-y:auto;padding:10px 0;display:flex;flex-direction:column;gap:12px">
           <div style="text-align:center;padding:20px;color:var(--muted);font-size:13px">
-            <i class="fas fa-spinner fa-spin"></i> Loading conversation...
+            <i class="fas fa-envelope"></i> No conversation selected
           </div>
         </div>
         <div style="display:flex;gap:10px;margin-top:12px">
@@ -2397,120 +2390,75 @@ const pageRenderers = {
     <div class="page-header"><h1>Performance Analytics</h1><p>Deep insights into class and learner performance</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-trophy"></i></div><div class="stat-value">A</div><div class="stat-label">Top Grade This Term</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-arrow-up"></i></div><div class="stat-value">+9%</div><div class="stat-label">Avg Improvement</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-fire"></i></div><div class="stat-value">12</div><div class="stat-label">Above 70%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-exclamation"></i></div><div class="stat-value">5</div><div class="stat-label">Below 50%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
     </div>
 
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div class="card-title">Performance by Subject</div></div>
-        <div class="chart-wrap"><canvas id="ta-subjectChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i> Loading data from server...</div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Term-on-Term Comparison</div></div>
-        <div class="chart-wrap"><canvas id="ta-termChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i> Loading data from server...</div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Learner Performance Heatmap</div><button class="card-action">Download Report</button></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Learner</th><th>Test 1</th><th>Test 2</th><th>Test 3</th><th>Assignment 1</th><th>Assignment 2</th><th>Exam</th><th>Final</th></tr></thead>
-          <tbody>
-            ${DB.teacher.heatmapLearners.map(name=>{
-              const vals = Array.from({length:6}, ()=>Math.floor(Math.random()*50+40));
-              const final = Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
-              return `<tr><td>${name}</td>${vals.map(v=>`<td style="background:${v>=70?'rgba(16,185,129,0.15)':v>=50?'rgba(251,191,36,0.1)':'rgba(239,68,68,0.1)'};color:${v>=70?'#10b981':v>=50?'#fbbf24':'#ef4444'};font-weight:600;text-align:center">${v}%</td>`).join('')}<td><b>${final}%</b></td></tr>`;
-            }).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading heatmap data from server...
       </div>
     </div>`;
-
-    setTimeout(() => {
-      const accent = getAccent();
-      makeBarChart('ta-subjectChart',
-        ['Mathematics','Science','History','English','Afrikaans'],
-        [{label:'Class Average',data:[62,58,71,65,68],backgroundColor:accent+'cc',borderRadius:8}]
-      );
-      makeLineChart('ta-termChart',
-        ['Term 1 2024','Term 2 2024','Term 3 2024','Term 4 2024','Term 1 2025'],
-        [
-          {label:'Current Class',data:[61,63,67,65,68],borderColor:accent,backgroundColor:accent+'22',fill:true,tension:0.4},
-          {label:'School Average',data:[62,63,64,65,66],borderColor:'#7b8db0',borderDash:[4,4],fill:false,tension:0.4},
-        ]
-      );
-    }, 100);
   },
 
   /* ========== LEARNER DASHBOARD ========== */
   'learner-dashboard': (el) => {
     el.innerHTML = `
     <div class="page-header">
-      <h1>Hello, Learner! 🎒</h1>
-      <p>Keep pushing — you're doing great this term!</p>
+      <h1>Welcome Back</h1>
+      <p>Your learning journey at a glance</p>
     </div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-star"></i></div><div class="stat-value">68%</div><div class="stat-label">Overall Average</div><div class="stat-change up">↑ 3%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar-check"></i></div><div class="stat-value">93%</div><div class="stat-label">Attendance</div><div class="stat-change up">↑ 1%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-trophy"></i></div><div class="stat-value">7</div><div class="stat-label">Badges Earned</div><div class="stat-change up">↑ 2</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-tasks"></i></div><div class="stat-value">3</div><div class="stat-label">Pending Tasks</div><div class="stat-change down">↑ 1</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Overall Average</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Attendance</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Badges Earned</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Pending Tasks</div></div>
     </div>
 
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div class="card-title">My Subjects</div></div>
-        <div class="subject-grid">
-          ${DB.learner.subjects.map(s=>`
-          <div class="subject-chip">
-            <div class="grade">${s.g}%</div>
-            <div class="subj">${s.s}</div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${s.g}%"></div></div>
-          </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading your subjects...
         </div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Performance Over Time</div></div>
-        <div class="chart-wrap"><canvas id="ld-perfChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading chart data...
+        </div>
       </div>
     </div>
 
     <div class="grid-2-1">
       <div class="card">
         <div class="card-header"><div class="card-title">Teacher Feedback</div></div>
-        <div class="scroll-list">
-          ${DB.learner.feedback.map(f=>`
-          <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:10px;border-left:3px solid ${f.type==='positive'?'#10b981':'#fbbf24'}">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <span style="font-size:13px;font-weight:600">${f.teacher} · <span style="color:var(--muted)">${f.subj}</span></span>
-              <span style="font-size:11px;color:var(--muted)">${f.date}</span>
-            </div>
-            <p style="font-size:13px;color:var(--muted);line-height:1.5">${f.msg}</p>
-          </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading feedback from server...
         </div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Upcoming</div></div>
-        ${[
-          ...DB.learner.upcoming].map(e=>`
-        <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
-          <div style="width:36px;height:36px;background:var(--surface2);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--accent)"><i class="fas ${e.icon}"></i></div>
-          <div><div style="font-size:13px;font-weight:500">${e.title}</div><div style="font-size:11px;color:var(--muted)">${e.date}</div></div>
-          <span class="badge ${e.col}" style="margin-left:auto">Due</span>
-        </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading upcoming items...
+        </div>
       </div>
     </div>`;
-
-    setTimeout(() => {
-      makeLineChart('ld-perfChart',
-        ['Week 1','Week 2','Week 3','Week 4','Week 5','Week 6'],
-        [{label:'My Average',data:[58,62,65,63,67,68],borderColor:getAccent(),backgroundColor:getAccent()+'22',fill:true,tension:0.4}]
-      );
-    }, 100);
   },
 
   /* ========== LEARNER PROGRESS ========== */
@@ -2521,73 +2469,32 @@ const pageRenderers = {
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div class="card-title">Subject Performance</div></div>
-        <div class="chart-wrap"><canvas id="lp-subjectChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading chart data...
+        </div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Progress Radar</div></div>
-        <div class="chart-wrap"><canvas id="lp-radarChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading radar chart...
+        </div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Detailed Results</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Subject</th><th>Test 1</th><th>Test 2</th><th>Assignment</th><th>Exam</th><th>Final</th><th>Grade</th></tr></thead>
-          <tbody>
-            ${[
-              {s:'Mathematics',marks:[68,72,75,70]},
-              {s:'Science',marks:[60,63,65,64]},
-              {s:'English',marks:[78,80,82,79]},
-              {s:'History',marks:[70,74,71,72]},
-              {s:'Afrikaans',marks:[55,58,60,59]},
-            ].map(r=>{
-              const avg = Math.round(r.marks.reduce((a,b)=>a+b,0)/r.marks.length);
-              const grade = avg>=80?'A':avg>=70?'B':avg>=60?'C':avg>=50?'D':'F';
-              const cls = avg>=60?'badge-green':avg>=50?'badge-yellow':'badge-red';
-              return `<tr><td><b>${r.s}</b></td>${r.marks.map(m=>`<td>${m}%</td>`).join('')}<td><b>${avg}%</b></td><td><span class="badge ${cls}">${grade}</span></td></tr>`;
-            }).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading detailed results from server...
       </div>
     </div>
 
     <div class="card" style="margin-top:20px">
       <div class="card-header"><div class="card-title">Monthly Attendance</div></div>
-      <div class="attendance-grid" id="attGrid"></div>
-      <div style="display:flex;gap:16px;margin-top:12px;font-size:12px">
-        <span><span class="att-dot att-present" style="display:inline-block;margin-right:4px"></span>Present</span>
-        <span><span class="att-dot att-absent" style="display:inline-block;margin-right:4px"></span>Absent</span>
-        <span><span class="att-dot att-late" style="display:inline-block;margin-right:4px"></span>Late</span>
-        <span><span class="att-dot att-holiday" style="display:inline-block;margin-right:4px"></span>Holiday</span>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading attendance data...
       </div>
     </div>`;
 
-    const grid = el.querySelector('#attGrid');
-    for (let i = 0; i < 28; i++) {
-      const dot = document.createElement('div');
-      dot.className = 'att-dot ' + (['att-present','att-present','att-present','att-late','att-absent','att-holiday'][Math.floor(Math.random()*6)]);
-      grid.appendChild(dot);
-    }
-
-    setTimeout(() => {
-      const accent = getAccent();
-      makeBarChart('lp-subjectChart',
-        ['Maths','Science','English','History','Afrikaans'],
-        [{label:'My Average',data:[72,65,78,71,60],backgroundColor:accent+'cc',borderRadius:8},{label:'Class Average',data:[62,58,71,68,63],backgroundColor:'#7b8db088',borderRadius:8}]
-      );
-      const ctx = document.getElementById('lp-radarChart');
-      if (charts['lp-radarChart']) charts['lp-radarChart'].destroy();
-      charts['lp-radarChart'] = new Chart(ctx, {
-        type: 'radar',
-        data: {
-          labels: ['Mathematics','Science','English','History','Afrikaans','P.E.'],
-          datasets: [{label:'My Performance',data:[72,65,78,71,60,88],borderColor:accent,backgroundColor:accent+'33',pointBackgroundColor:accent}]
-        },
-        options: {responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#7b8db0'}}},scales:{r:{ticks:{color:'#7b8db0',backdropColor:'transparent'},grid:{color:'rgba(255,255,255,0.07)'},pointLabels:{color:'#7b8db0'}}}}
-      });
-    }, 100);
-  },
 
   /* ========== LEARNER RESOURCES ========== */
   'learner-resources': (el) => {
@@ -2651,63 +2558,20 @@ const pageRenderers = {
 
     <div class="card" style="margin-top:20px">
       <div class="card-header"><div class="card-title">Leaderboard — Grade 10</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>#</th><th>Learner</th><th>Points</th><th>Badges</th><th>Avg Mark</th></tr></thead>
-          <tbody>
-            ${[
-              {rank:1,name:'Learner 5',pts:520,badges:10,avg:82,self:false},
-              {rank:2,name:'Learner 9',pts:480,badges:9,avg:78,self:false},
-              {rank:3,name:'Learner',pts:340,badges:7,avg:70,self:true},
-              {rank:4,name:'Learner 8',pts:310,badges:6,avg:68,self:false},
-              {rank:5,name:'Learner 6',pts:290,badges:6,avg:67,self:false},
-            ].map(r=>`
-            <tr style="${r.self?'background:var(--accent-soft)':''}">
-              <td><span style="font-size:16px">${r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank}</span></td>
-              <td><b>${r.name}</b> ${r.self?'<span class="badge badge-blue">You</span>':''}</td>
-              <td><b>${r.pts}</b></td>
-              <td>${r.badges} 🏅</td>
-              <td>${r.avg}%</td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading leaderboard data from server...
       </div>
     </div>`;
   },
 
   /* ========== LEARNER TIMETABLE ========== */
   'learner-timetable': (el) => {
-    const periods = ['07:30','08:20','09:10','10:00','10:30','11:20','12:10','13:10'];
-    const periodLabels = ['Period 1','Period 2','Period 3','Break','Period 4','Period 5','Lunch','Period 6'];
-    const days = ['Mon','Tue','Wed','Thu','Fri'];
-    const subjects = [
-      ['Maths','English','History','Science','Afrikaans'],
-      ['Science','Maths','English','Afrikaans','History'],
-      ['History','Maths','Science','English','P.E.'],
-      ['—','—','—','—','—'],
-      ['Maths','Science','P.E.','History','English'],
-      ['English','Afrikaans','Maths','Science','History'],
-      ['—','—','—','—','—'],
-      ['Afrikaans','P.E.','English','Maths','Science'],
-    ];
-    const colors = {Maths:'#4f8ef7',Science:'#10b981',History:'#fb923c',English:'#c084fc',Afrikaans:'#fbbf24','P.E.':'#f43f5e','—':'transparent'};
-
     el.innerHTML = `
     <div class="page-header"><h1>My Timetable</h1><p>Your weekly class schedule</p></div>
 
     <div class="card">
-      <div class="table-wrap">
-        <table class="timetable">
-          <thead><tr><th></th>${days.map(d=>`<th>${d}</th>`).join('')}</tr></thead>
-          <tbody>
-            ${periods.map((time,i) => `
-            <tr>
-              <td><div style="font-size:10px;color:var(--muted)">${time}</div><div style="font-size:11px;font-weight:600">${periodLabels[i]}</div></td>
-              ${subjects[i].map(s => `
-              <td><div class="timetable-cell ${s==='—'?'empty':''}" style="${s!=='—'?`background:${colors[s]||'var(--surface2)'}22;border-color:${colors[s]||'transparent'};color:${colors[s]||'var(--muted)'}`:''}">${s}</div></td>`).join('')}
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading your timetable from server...
       </div>
     </div>`;
   },
@@ -2789,56 +2653,31 @@ const pageRenderers = {
     <div class="page-header"><h1>Payments</h1><p>School fees and transaction history</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-money-bill"></i></div><div class="stat-value">R12,000</div><div class="stat-label">Annual Fees</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-value">R9,600</div><div class="stat-label">Paid to Date</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-clock"></i></div><div class="stat-value">R2,400</div><div class="stat-label">Outstanding</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-calendar"></i></div><div class="stat-value">28 Feb</div><div class="stat-label">Next Due Date</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Loading...</div></div>
     </div>
 
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div class="card-title">Outstanding Balance</div></div>
-        <div style="padding:20px 0">
-          <div style="font-size:42px;font-weight:800;font-family:'Syne',sans-serif;color:#ef4444">R2,400</div>
-          <div style="color:var(--muted);font-size:13px;margin-bottom:20px">Due 28 February 2026</div>
-          <div class="progress-bar" style="height:10px"><div class="progress-fill" style="width:80%;background:#10b981"></div></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:6px">80% of annual fees paid</div>
-          <button class="btn btn-primary" style="margin-top:20px;width:100%" onclick="showToast('Payment gateway coming soon','info')"><i class="fas fa-credit-card"></i> Pay Now — R2,400</button>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading payment data from server...
         </div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Payment Schedule</div></div>
-        ${[
-          {term:'Term 1',amount:'R3,000',due:'31 Jan',status:'Paid'},
-          {term:'Term 2',amount:'R3,000',due:'30 Apr',status:'Paid'},
-          {term:'Term 3',amount:'R3,000',due:'31 Jul',status:'Paid'},
-          {term:'Term 4',amount:'R3,000',due:'28 Feb',status:'Due'},
-        ].map(p=>`
-        <div class="fee-item">
-          <div><div class="fee-label">${p.term} School Fees</div><div style="font-size:11px;color:var(--muted)">Due: ${p.due}</div></div>
-          <div style="display:flex;align-items:center;gap:12px">
-            <div class="fee-amount">${p.amount}</div>
-            <span class="badge ${p.status==='Paid'?'badge-green':'badge-red'}">${p.status}</span>
-          </div>
-        </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading schedule from server...
+        </div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Transaction History</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Description</th><th>Reference</th><th>Amount</th><th>Status</th></tr></thead>
-          <tbody>
-            ${[
-              {date:'31 Jan 2026',desc:'Term 1 School Fees',ref:'TXN-20260131',amt:'R3,000',status:'Success'},
-              {date:'31 Jul 2025',desc:'Term 3 School Fees',ref:'TXN-20250731',amt:'R3,000',status:'Success'},
-              {date:'30 Apr 2025',desc:'Term 2 School Fees',ref:'TXN-20250430',amt:'R3,000',status:'Success'},
-              {date:'15 Mar 2025',desc:'Sports Fund Contribution',ref:'TXN-20250315',amt:'R200',status:'Success'},
-              {date:'31 Jan 2025',desc:'Term 1 School Fees',ref:'TXN-20250131',amt:'R3,000',status:'Success'},
-            ].map(t=>`<tr><td>${t.date}</td><td>${t.desc}</td><td style="color:var(--muted);font-size:12px">${t.ref}</td><td style="color:#10b981;font-weight:600">${t.amt}</td><td><span class="badge badge-green">${t.status}</span></td></tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading transactions from server...
       </div>
     </div>`;
   },
@@ -2851,42 +2690,14 @@ const pageRenderers = {
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div class="card-title">Upcoming Events</div></div>
-        <div class="scroll-list">
-          ${[
-            {day:'28',month:'Feb',name:'Grade 10 Mathematics Test',time:'08:00',venue:'Classroom 10A',type:'Academic'},
-            {day:'5',month:'Mar',name:'Parent-Teacher Evening',time:'17:00',venue:'School Hall',type:'Meeting'},
-            {day:'7',month:'Mar',name:'English Essays Due',time:'All Day',venue:'Online',type:'Academic'},
-            {day:'12',month:'Mar',name:'Annual Sports Day',time:'09:00',venue:'Sports Field',type:'Sports'},
-            {day:'20',month:'Mar',name:'Science Exhibition',time:'14:00',venue:'Library',type:'Academic'},
-            {day:'28',month:'Mar',name:'End of Term Concert',time:'18:00',venue:'Auditorium',type:'Cultural'},
-          ].map(e=>`
-          <div style="display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)">
-            <div class="event-date"><div class="day">${e.day}</div><div class="month">${e.month}</div></div>
-            <div style="flex:1">
-              <div style="font-size:13px;font-weight:600">${e.name}</div>
-              <div style="font-size:12px;color:var(--muted)">${e.time} · ${e.venue}</div>
-              <span class="badge ${e.type==='Academic'?'badge-blue':e.type==='Meeting'?'badge-purple':e.type==='Sports'?'badge-green':'badge-orange'}" style="margin-top:4px">${e.type}</span>
-            </div>
-            <button class="btn btn-secondary" style="font-size:11px;padding:4px 10px;align-self:center" onclick="showToast('Added to calendar!','success')">+ Add</button>
-          </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading events from server...
         </div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Notice Board</div></div>
-        <div class="scroll-list">
-          ${[
-            {title:'Uniform Policy Reminder',msg:'All learners must wear full school uniform from 1 March 2026.',date:'24 Feb',priority:'Info'},
-            {title:'Exam Timetable Released',msg:'The Term 2 exam timetable is now available on the parent portal.',date:'22 Feb',priority:'Important'},
-            {title:'COVID Health Protocol',msg:'Please ensure your child does not attend school if feeling unwell.',date:'20 Feb',priority:'Health'},
-            {title:'Sports Day Volunteers Needed',msg:'Parents who wish to volunteer on Sports Day please contact admin.',date:'18 Feb',priority:'Info'},
-          ].map(n=>`
-          <div style="padding:12px;background:var(--surface2);border-radius:var(--radius-sm);margin-bottom:10px;border-left:3px solid var(--accent)">
-            <div style="display:flex;justify-content:space-between;margin-bottom:4px">
-              <span style="font-size:13px;font-weight:600">${n.title}</span>
-              <span style="font-size:11px;color:var(--muted)">${n.date}</span>
-            </div>
-            <p style="font-size:12px;color:var(--muted)">${n.msg}</p>
-          </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading notices from server...
         </div>
       </div>
     </div>`;
@@ -2900,41 +2711,19 @@ const pageRenderers = {
     <div style="display:grid;grid-template-columns:280px 1fr;gap:20px;height:65vh" class="messages-grid">
       <div class="card" style="overflow:hidden;display:flex;flex-direction:column">
         <div class="card-header"><div class="card-title">Conversations</div></div>
-        ${[
-          {init:'SJ',name:'Teacher',subj:'Mathematics',msg:'Thank you for your message!',time:'10m',unread:1,col:'av-1'},
-          {init:'KS',name:'Teacher',subj:'Science',msg:'Lab report feedback available.',time:'2h',unread:0,col:'av-2'},
-          {init:'NM',name:'Teacher',subj:'English',msg:'Well done on Learner\'s essay!',time:'1d',unread:0,col:'av-4'},
-        ].map(m=>`
-        <div class="message-item">
-          <div class="msg-avatar ${m.col}">${m.init}</div>
-          <div class="msg-info"><div class="sender">${m.name}</div><div class="preview">${m.subj} · ${m.msg}</div></div>
-          <div class="msg-meta"><div class="time">${m.time}</div>${m.unread?`<div class="unread">${m.unread}</div>`:''}</div>
-        </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading conversations from server...
+        </div>
       </div>
       <div class="card" style="display:flex;flex-direction:column">
         <div class="card-header">
           <div style="display:flex;align-items:center;gap:10px">
-            <div class="avatar av-1" style="width:36px;height:36px;font-size:12px">SJ</div>
-            <div><div style="font-weight:600">Teacher</div><div style="font-size:11px;color:var(--muted)">Mathematics Teacher</div></div>
+            <div class="avatar av-1" style="width:36px;height:36px;font-size:12px">—</div>
+            <div><div style="font-weight:600">—</div><div style="font-size:11px;color:var(--muted)">Select a conversation</div></div>
           </div>
         </div>
-        <div style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:12px;padding:4px 0">
-          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px">
-            <div style="background:var(--surface2);padding:10px 14px;border-radius:16px 16px 16px 4px;max-width:70%;font-size:13px;line-height:1.5">Hello, I wanted to check in about Learner's progress in Mathematics this term.</div>
-            <div style="font-size:10px;color:var(--muted)">Yesterday 14:00</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-            <div style="background:var(--accent);padding:10px 14px;border-radius:16px 16px 4px 16px;max-width:70%;font-size:13px;line-height:1.5">Hi Teacher, thank you for reaching out. We've noticed Learner has been working very hard at home.</div>
-            <div style="font-size:10px;color:var(--muted)">Yesterday 14:30</div>
-          </div>
-          <div style="display:flex;flex-direction:column;align-items:flex-start;gap:4px">
-            <div style="background:var(--surface2);padding:10px 14px;border-radius:16px 16px 16px 4px;max-width:70%;font-size:13px;line-height:1.5">That's wonderful to hear! Learner scored 72% in the latest test, up from 68%. We'll focus on geometry next. Thank you for your message!</div>
-            <div style="font-size:10px;color:var(--muted)">10 min ago</div>
-          </div>
-        </div>
-        <div style="display:flex;gap:10px;margin-top:12px">
-          <input type="text" placeholder="Write a message..." style="flex:1;background:var(--surface2);border:1px solid var(--border);border-radius:10px;padding:10px 14px;color:var(--text);font-size:13px;outline:none" />
-          <button class="btn btn-primary"><i class="fas fa-paper-plane"></i></button>
+        <div style="flex:1;text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-envelope"></i> No conversation selected
         </div>
       </div>
     </div>`;
@@ -2947,41 +2736,17 @@ const pageRenderers = {
 
     <div class="card" style="margin-bottom:20px">
       <div class="card-header"><div class="card-title">Overall Performance</div><button class="btn btn-primary" onclick="showToast('Generating report...','info')"><i class="fas fa-download"></i> Download Report</button></div>
-      <div class="grid-2">
-        <div class="chart-wrap"><canvas id="pr-subjectChart"></canvas></div>
-        <div>
-          ${[{s:'Mathematics',g:72,chg:'+4%'},{s:'Science',g:65,chg:'-3%'},{s:'English',g:78,chg:'+5%'},{s:'History',g:71,chg:'+2%'},{s:'Afrikaans',g:60,chg:'+1%'}].map(s=>`
-          <div style="margin-bottom:12px">
-            <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:4px">
-              <span>${s.s}</span>
-              <span style="color:${s.g>=70?'#10b981':s.g>=60?'#fbbf24':'#ef4444'};font-weight:600">${s.g}% <span style="font-size:11px;color:${s.chg[0]==='-'?'#ef4444':'#10b981'}">${s.chg}</span></span>
-            </div>
-            <div class="progress-bar"><div class="progress-fill" style="width:${s.g}%"></div></div>
-          </div>`).join('')}
-        </div>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading performance data from server...
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Class Comparison</div></div>
-      <div class="chart-wrap"><canvas id="pr-compareChart"></canvas></div>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading comparison data...
+      </div>
     </div>`;
-
-    setTimeout(() => {
-      const accent = getAccent();
-      makeDoughnutChart('pr-subjectChart',
-        ['Maths','Science','English','History','Afrikaans'],
-        [72,65,78,71,60],
-        [accent,'#10b981','#c084fc','#fb923c','#fbbf24']
-      );
-      makeBarChart('pr-compareChart',
-        ['Mathematics','Science','English','History','Afrikaans'],
-        [
-          {label:'Learner',data:[72,65,78,71,60],backgroundColor:accent+'cc',borderRadius:8},
-          {label:'Class Average',data:[62,58,71,68,63],backgroundColor:'#7b8db044',borderRadius:8},
-        ]
-      );
-    }, 100);
   },
 
   /* ========== ADMIN DASHBOARD ========== */
@@ -3078,41 +2843,16 @@ const pageRenderers = {
     </div>
 
     <div class="stats-grid" style="margin-bottom:20px">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-user-graduate"></i></div><div class="stat-value">—</div><div class="stat-label">Learners</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-chalkboard-teacher"></i></div><div class="stat-value">—</div><div class="stat-label">Teachers</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-users"></i></div><div class="stat-value">—</div><div class="stat-label">Parents</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-shield-alt"></i></div><div class="stat-value">—</div><div class="stat-label">Admins</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Learners</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Teachers</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Parents</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Admins</div></div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Directory</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>User</th><th>Role</th><th>Grade/Department</th><th>Email</th><th>Status</th><th>Last Login</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${[
-              {name:'Staff',role:'Teacher',dept:'Academic Services',email:'staff@edu.local',status:'Active',login:'Today',init:'ST'},
-              {name:'Learner',role:'Learner',dept:'Grade 10',email:'learner@edu.local',status:'Active',login:'Today',init:'LD'},
-              {name:'Parent',role:'Parent',dept:'N/A',email:'parent@edu.local',status:'Active',login:'2 days',init:'PR'},
-              {name:'Learner 2',role:'Learner',dept:'Grade 11',email:'learner2@edu.local',status:'Active',login:'Today',init:'L2'},
-              {name:'Parent 2',role:'Parent',dept:'N/A',email:'parent2@edu.local',status:'Active',login:'1 week',init:'P2'},
-              {name:'Staff 2',role:'Teacher',dept:'Sciences',email:'staff2@edu.local',status:'Active',login:'Today',init:'SC'},
-            ].map(u=>`<tr>
-              <td><div style="display:flex;align-items:center;gap:8px"><div class="avatar" style="width:32px;height:32px;font-size:11px;background:var(--accent)">${u.init}</div><b>${u.name}</b></div></td>
-              <td><span class="badge ${u.role==='Teacher'?'badge-blue':u.role==='Learner'?'badge-green':u.role==='Parent'?'badge-purple':'badge-orange'}">${u.role}</span></td>
-              <td>${u.dept}</td>
-              <td style="font-size:12px;color:var(--muted)">${u.email}</td>
-              <td><span class="badge badge-green">${u.status}</span></td>
-              <td style="font-size:12px;color:var(--muted)">${u.login}</td>
-              <td>
-                <div style="display:flex;gap:4px">
-                  <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px" onclick="showToast('Edit coming soon','info')"><i class="fas fa-edit"></i></button>
-                  <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:#ef4444" onclick="showToast('Deactivate coming soon','info')"><i class="fas fa-ban"></i></button>
-                </div>
-              </td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading user directory from server...
       </div>
     </div>`;
   },
@@ -3123,63 +2863,29 @@ const pageRenderers = {
     <div class="page-header"><h1>Finance Dashboard</h1><p>Monitor payments, budget and financial health</p></div>
 
     <div class="stats-grid">
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-coins"></i></div><div class="stat-value">R1.87M</div><div class="stat-label">Total Revenue YTD</div><div class="stat-change up">↑ 12%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-check-circle"></i></div><div class="stat-value">R1.42M</div><div class="stat-label">Fees Collected</div><div class="stat-change up">↑ 8%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-exclamation-circle"></i></div><div class="stat-value">R320K</div><div class="stat-label">Outstanding</div><div class="stat-change down">↓ 3%</div></div>
-      <div class="stat-card"><div class="stat-icon"><i class="fas fa-hand-holding-usd"></i></div><div class="stat-value">R450K</div><div class="stat-label">Donations</div><div class="stat-change up">↑ 22%</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Total Revenue YTD</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Fees Collected</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Outstanding</div></div>
+      <div class="stat-card"><div class="stat-icon"><i class="fas fa-spinner fa-spin"></i></div><div class="stat-value">—</div><div class="stat-label">Donations</div></div>
     </div>
 
     <div class="grid-2">
       <div class="card">
         <div class="card-header"><div class="card-title">Monthly Revenue</div></div>
-        <div class="chart-wrap"><canvas id="af-revenueChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i> Loading chart...</div>
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Budget Allocation</div></div>
-        <div class="chart-wrap"><canvas id="af-budgetChart"></canvas></div>
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i> Loading chart...</div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Recent Transactions</div><button class="btn btn-secondary" onclick="showToast('Export coming soon','info')"><i class="fas fa-download"></i> Export</button></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Date</th><th>Description</th><th>Category</th><th>Amount</th><th>Balance</th><th>Status</th></tr></thead>
-          <tbody>
-            ${[
-              {date:'26 Feb',desc:'School Fees – Parent',cat:'Fees',amt:'+R3,000',bal:'R1.87M',status:'Received'},
-              {date:'25 Feb',desc:'Electricity Bill',cat:'Utilities',amt:'-R12,400',bal:'R1.86M',status:'Paid'},
-              {date:'24 Feb',desc:'Corporate Donation – XYZ Ltd',cat:'Donation',amt:'+R50,000',bal:'R1.87M',status:'Received'},
-              {date:'23 Feb',desc:'Staff Salaries Feb',cat:'Payroll',amt:'-R420,000',bal:'R1.82M',status:'Paid'},
-              {date:'22 Feb',desc:'Science Lab Equipment',cat:'Capital',amt:'-R28,000',bal:'R2.24M',status:'Paid'},
-            ].map(t=>`<tr>
-              <td style="font-size:12px;color:var(--muted)">${t.date}</td>
-              <td>${t.desc}</td>
-              <td><span class="badge ${t.cat==='Fees'?'badge-green':t.cat==='Donation'?'badge-blue':t.cat==='Payroll'?'badge-purple':t.cat==='Capital'?'badge-orange':'badge-yellow'}">${t.cat}</span></td>
-              <td style="color:${t.amt[0]==='-'?'#ef4444':'#10b981'};font-weight:700">${t.amt}</td>
-              <td style="font-weight:600">${t.bal}</td>
-              <td><span class="badge badge-green">${t.status}</span></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading transactions from server...
       </div>
     </div>`;
-
-    setTimeout(() => {
-      const accent = getAccent();
-      makeBarChart('af-revenueChart',
-        ['Aug','Sep','Oct','Nov','Dec','Jan','Feb'],
-        [
-          {label:'Revenue',data:[180,210,195,220,90,310,180],backgroundColor:accent+'cc',borderRadius:6},
-          {label:'Expenses',data:[150,160,170,180,120,200,160],backgroundColor:'#7b8db044',borderRadius:6},
-        ]
-      );
-      makeDoughnutChart('af-budgetChart',
-        ['Salaries','Utilities','Capital','Programs','Admin'],
-        [65,10,12,8,5],
-        [accent,'#10b981','#fb923c','#c084fc','#fbbf24']
-      );
-    }, 100);
   },
 
   /* ========== ADMIN ANALYTICS ========== */
@@ -3241,11 +2947,11 @@ const pageRenderers = {
         <div style="display:flex;flex-direction:column;gap:14px">
           <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Title</label>
-            <input type="text" placeholder="Announcement title..." value="Exam Timetable Released" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;font-family:'DM Sans',sans-serif" />
+            <input type="text" placeholder="Announcement title..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;font-family:'DM Sans',sans-serif" />
           </div>
           <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Message</label>
-            <textarea rows="4" placeholder="Write your announcement..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif">The Term 2 examination timetable is now available. Please log in to your portal to view the schedule. All learners are encouraged to begin preparation early.</textarea>
+            <textarea rows="4" placeholder="Write your announcement..." style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:8px;padding:10px 14px;color:var(--text);font-size:13px;outline:none;resize:vertical;font-family:'DM Sans',sans-serif"></textarea>
           </div>
           <div>
             <label style="font-size:12px;color:var(--muted);display:block;margin-bottom:6px">Recipients</label>
@@ -3264,41 +2970,16 @@ const pageRenderers = {
       </div>
       <div class="card">
         <div class="card-header"><div class="card-title">Quick Stats</div></div>
-        <div style="display:flex;flex-direction:column;gap:12px">
-          ${[{label:'Published This Month',val:'8'},{label:'Total Recipients',val:'2,112'},{label:'Avg Open Rate',val:'78%'},{label:'Scheduled',val:'3'}].map(s=>`
-          <div style="display:flex;justify-content:space-between;padding:10px;background:var(--surface2);border-radius:8px">
-            <span style="font-size:13px">${s.label}</span>
-            <span style="font-weight:700;color:var(--accent)">${s.val}</span>
-          </div>`).join('')}
+        <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+          <i class="fas fa-spinner fa-spin"></i> Loading stats from server...
         </div>
       </div>
     </div>
 
     <div class="card">
       <div class="card-header"><div class="card-title">Published Announcements</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Title</th><th>Audience</th><th>Date</th><th>Views</th><th>Status</th><th>Actions</th></tr></thead>
-          <tbody>
-            ${[
-              {title:'Exam Timetable Released',aud:'All',date:'22 Feb',views:1842,status:'Published'},
-              {title:'Uniform Policy Update',aud:'Learners, Parents',date:'20 Feb',views:1200,status:'Published'},
-              {title:'Sports Day Volunteers',aud:'Parents',date:'18 Feb',views:645,status:'Published'},
-              {title:'Staff Meeting Reminder',aud:'Teachers',date:'15 Feb',views:48,status:'Published'},
-              {title:'March Holiday Notice',aud:'All',date:'Scheduled 1 Mar',views:0,status:'Scheduled'},
-            ].map(a=>`<tr>
-              <td><b>${a.title}</b></td>
-              <td style="font-size:12px">${a.aud}</td>
-              <td style="font-size:12px;color:var(--muted)">${a.date}</td>
-              <td>${a.views}</td>
-              <td><span class="badge ${a.status==='Published'?'badge-green':'badge-yellow'}">${a.status}</span></td>
-              <td><div style="display:flex;gap:4px">
-                <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px"><i class="fas fa-edit"></i></button>
-                <button class="btn btn-secondary" style="font-size:11px;padding:4px 8px;color:#ef4444"><i class="fas fa-trash"></i></button>
-              </div></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading announcements from server...
       </div>
     </div>`;
   },
@@ -3316,29 +2997,8 @@ const pageRenderers = {
 
     <div class="card">
       <div class="card-header"><div class="card-title">Activity Log</div></div>
-      <div class="table-wrap">
-        <table>
-          <thead><tr><th>Timestamp</th><th>User</th><th>Role</th><th>Action</th><th>Details</th><th>IP Address</th><th>Status</th></tr></thead>
-          <tbody>
-            ${[
-              {time:'2026-02-26 09:42:11',user:'Teacher',role:'Teacher',action:'Grade Updated',detail:'Learner – Maths 72%',ip:'192.168.1.22',status:'Success'},
-              {time:'2026-02-26 09:30:05',user:'Administrator',role:'Admin',action:'User Added',detail:'New teacher: Teacher',ip:'192.168.1.1',status:'Success'},
-              {time:'2026-02-26 09:15:33',user:'Parent',role:'Parent',action:'Login',detail:'Via web portal',ip:'41.21.12.55',status:'Success'},
-              {time:'2026-02-26 08:55:20',user:'Unknown',role:'N/A',action:'Failed Login',detail:'Invalid credentials (3x)',ip:'172.16.0.12',status:'Failed'},
-              {time:'2026-02-26 08:40:00',user:'Administrator',role:'Admin',action:'Payment Recorded',detail:'R3,000 from Parent',ip:'192.168.1.1',status:'Success'},
-              {time:'2026-02-26 08:12:45',user:'Learner',role:'Learner',action:'Resource Downloaded',detail:'Algebra Notes Ch. 1-3',ip:'41.21.8.99',status:'Success'},
-              {time:'2026-02-25 17:30:00',user:'Administrator',role:'Admin',action:'Announcement Published',detail:'Exam Timetable Released',ip:'192.168.1.1',status:'Success'},
-            ].map(l=>`<tr>
-              <td style="font-size:11px;color:var(--muted);white-space:nowrap">${l.time}</td>
-              <td><b>${l.user}</b></td>
-              <td><span class="badge ${l.role==='Teacher'?'badge-blue':l.role==='Admin'?'badge-orange':l.role==='Parent'?'badge-purple':l.role==='Learner'?'badge-green':'badge-red'}">${l.role}</span></td>
-              <td>${l.action}</td>
-              <td style="font-size:12px;color:var(--muted)">${l.detail}</td>
-              <td style="font-size:11px;color:var(--muted)">${l.ip}</td>
-              <td><span class="badge ${l.status==='Success'?'badge-green':'badge-red'}">${l.status}</span></td>
-            </tr>`).join('')}
-          </tbody>
-        </table>
+      <div style="text-align:center;padding:40px;color:var(--muted);font-size:13px">
+        <i class="fas fa-spinner fa-spin"></i> Loading audit logs from server...
       </div>
     </div>`;
   },

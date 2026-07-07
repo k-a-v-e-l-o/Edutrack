@@ -1,5 +1,9 @@
 {
   "appId": "com.kabelo.edutrack",
   "appName": "EduTrack",
-  "webDir": "www"
+  "webDir": "www",
+  "server": {
+    "url": "https://edutrack-production-390e.up.railway.app",
+    "cleartext": false
+  }
 }
