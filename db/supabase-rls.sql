@@ -3,14 +3,23 @@
 
 -- Step 1: Enable RLS on sensitive tables
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users FORCE ROW LEVEL SECURITY;
 ALTER TABLE messages ENABLE ROW LEVEL SECURITY;
+ALTER TABLE messages FORCE ROW LEVEL SECURITY;
 ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+ALTER TABLE notifications FORCE ROW LEVEL SECURITY;
 ALTER TABLE attendance ENABLE ROW LEVEL SECURITY;
+ALTER TABLE attendance FORCE ROW LEVEL SECURITY;
 ALTER TABLE marks ENABLE ROW LEVEL SECURITY;
+ALTER TABLE marks FORCE ROW LEVEL SECURITY;
 ALTER TABLE fee_accounts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE fee_accounts FORCE ROW LEVEL SECURITY;
 ALTER TABLE resources ENABLE ROW LEVEL SECURITY;
+ALTER TABLE resources FORCE ROW LEVEL SECURITY;
 ALTER TABLE announcements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE announcements FORCE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs FORCE ROW LEVEL SECURITY;
 
 -- Step 2: Create policies for authenticated users
 CREATE POLICY "Users can view own profile" ON users
@@ -88,3 +97,4 @@ CREATE POLICY "Insert marks by teacher" ON marks
 
 -- Step 4: Use this file as a starter; review and extend policies for all tables.
 -- Recommendation: create Supabase policies for classes, learners, parents, fees, resources, announcements, and any other sensitive tables.
+
