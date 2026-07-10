@@ -1,5 +1,6 @@
 const { query } = require('../db');
 const bcrypt    = require('bcryptjs');
+const { getMetrics: collectMetrics, getMetricsJson: collectMetricsJson } = require('../middleware/monitoring');
 
 // ─── Dashboard Stats ──────────────────────────────────────────
 const getDashboardStats = async (req, res) => {
@@ -657,6 +658,20 @@ const getAuditLogs = async (req, res) => {
   }
 };
 
+const getMetrics = async (req, res) => {
+  try {
+    if (req.headers.accept?.includes('text/plain')) {
+      const metricsText = await collectMetrics();
+      return res.type('text/plain').send(metricsText);
+    }
+    const metricsJson = await collectMetricsJson();
+    return res.status(200).json({ success: true, metrics: metricsJson });
+  } catch (err) {
+    console.error('Admin getMetrics error:', err.message);
+    return res.status(500).json({ success: false, message: 'Unable to fetch metrics.' });
+  }
+};
+
 // ─── Notifications ────────────────────────────────────────────
 const getNotifications = async (req, res) => {
   try {
@@ -713,6 +728,7 @@ module.exports = {
   getMessages,
   sendMessage,
   getAuditLogs,
+  getMetrics,
   getNotifications,
   markNotificationRead
 };
