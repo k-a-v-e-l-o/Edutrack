@@ -8,7 +8,7 @@ const path        = require('path');
 const hpp         = require('hpp');
 const rateLimit   = require('express-rate-limit');
 const dbContext   = require('./middleware/dbContext');
-const { auditRequest } = require('./middleware/auditLog');
+const auditLog = require('./middleware/auditLog');
 const { monitoring } = require('./middleware/monitoring');
 
 const app = express();
@@ -64,7 +64,7 @@ app.use(express.json({ limit: '10kb' }));
 app.use(express.urlencoded({ extended: true, limit: '10kb' }));
 app.use(dbContext);
 app.use(monitoring);
-app.use('/api', auditRequest);
+app.use('/api', auditLog('API_REQUEST'));
 
 if (process.env.NODE_ENV === 'production') {
   app.use((req, res, next) => {
@@ -155,3 +155,4 @@ const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => {
   console.log(`✅ EduTrack server running on http://localhost:${PORT}`);
 });
+
