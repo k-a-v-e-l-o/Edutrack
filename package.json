@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@capacitor/push-notifications": "^8.1.1",
-    "@sentry/node": "^9.47.1",
+    "@sentry/node": "^10.65.0",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
