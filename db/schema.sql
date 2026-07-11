@@ -8,9 +8,33 @@ CREATE TYPE fee_status AS ENUM ('paid', 'pending', 'overdue', 'waived');
 CREATE TYPE announcement_status AS ENUM ('draft', 'published', 'archived');
 CREATE TYPE audit_status AS ENUM ('success', 'failure');
 CREATE TYPE resource_type AS ENUM ('document', 'video', 'link', 'image', 'other');
+CREATE TYPE application_status AS ENUM ('pending', 'approved', 'rejected');
+
+-- ===================== SCHOOLS (TENANTS) =====================
+-- Each row is one institution using EduTrack. Every school-scoped
+-- table below carries a school_id so one school can never see or
+-- touch another school's data.
+CREATE TABLE schools (
+  id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  name          VARCHAR(255) NOT NULL,
+  slug          VARCHAR(100) NOT NULL UNIQUE,
+  address       TEXT,
+  latitude      NUMERIC(9,6),
+  longitude     NUMERIC(9,6),
+  contact_email VARCHAR(255),
+  contact_phone VARCHAR(20),
+  is_active     BOOLEAN NOT NULL DEFAULT TRUE,
+  created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_schools_active ON schools(is_active);
 
 CREATE TABLE users (
   id            UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- NULL for parents (a parent can have children at different schools).
+  -- Required for admin, teacher, and learner (see chk_school_id_by_role).
+  school_id     UUID REFERENCES schools(id) ON DELETE RESTRICT,
   email         VARCHAR(255) NOT NULL UNIQUE,
   password_hash VARCHAR(255) NOT NULL,
   role          user_role NOT NULL,
@@ -23,32 +47,44 @@ CREATE TABLE users (
   is_active     BOOLEAN NOT NULL DEFAULT TRUE,
   last_login    TIMESTAMPTZ,
   created_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at    TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  CONSTRAINT chk_school_id_by_role CHECK (
+    (role = 'parent' AND school_id IS NULL) OR
+    (role IN ('admin', 'teacher', 'learner') AND school_id IS NOT NULL)
+  )
 );
 
 CREATE TABLE grades (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name       VARCHAR(50) NOT NULL UNIQUE,
-  level      INTEGER NOT NULL UNIQUE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  name       VARCHAR(50) NOT NULL,
+  level      INTEGER NOT NULL,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, name),
+  UNIQUE (school_id, level)
 );
 
 CREATE TABLE classes (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name       VARCHAR(50) NOT NULL UNIQUE,
+  school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  name       VARCHAR(50) NOT NULL,
   grade_id   UUID NOT NULL REFERENCES grades(id) ON DELETE RESTRICT,
   room       VARCHAR(50),
   capacity   INTEGER DEFAULT 40,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, name)
 );
 
 CREATE TABLE subjects (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        VARCHAR(100) NOT NULL UNIQUE,
-  code        VARCHAR(20) NOT NULL UNIQUE,
+  school_id   UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  name        VARCHAR(100) NOT NULL,
+  code        VARCHAR(20) NOT NULL,
   description TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, name),
+  UNIQUE (school_id, code)
 );
 
 CREATE TABLE class_subjects (
@@ -95,6 +131,34 @@ CREATE TABLE parent_learners (
   relationship VARCHAR(50) NOT NULL DEFAULT 'guardian',
   is_primary   BOOLEAN NOT NULL DEFAULT FALSE,
   PRIMARY KEY (parent_id, learner_id)
+);
+
+-- ===================== LEARNER APPLICATIONS =====================
+-- Registration workflow: a parent applies for a child at a specific
+-- school and requests a grade. Nothing here touches the live `users`
+-- table until a school admin approves it — at which point the app
+-- creates the learner's user + learner_profiles rows, sets learner_id
+-- below, and links class_id (subjects then follow automatically via
+-- class_subjects).
+CREATE TABLE learner_applications (
+  id                 UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id          UUID NOT NULL REFERENCES schools(id) ON DELETE RESTRICT,
+  parent_id          UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  first_name         VARCHAR(100) NOT NULL,
+  last_name          VARCHAR(100) NOT NULL,
+  date_of_birth      DATE NOT NULL,
+  gender             gender_type,
+  relationship       VARCHAR(50) NOT NULL DEFAULT 'guardian',
+  grade_requested_id UUID REFERENCES grades(id),
+  previous_school    VARCHAR(255),
+  supporting_docs    TEXT,
+  status             application_status NOT NULL DEFAULT 'pending',
+  admin_notes        TEXT,
+  reviewed_by        UUID REFERENCES users(id) ON DELETE SET NULL,
+  reviewed_at        TIMESTAMPTZ,
+  learner_id         UUID REFERENCES users(id) ON DELETE SET NULL,
+  created_at         TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at         TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
 CREATE TABLE attendance (
@@ -185,6 +249,7 @@ CREATE TABLE notifications (
 
 CREATE TABLE fee_structures (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  school_id   UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
   name        VARCHAR(255) NOT NULL,
   grade_id    UUID REFERENCES grades(id),
   amount      NUMERIC(10,2) NOT NULL,
@@ -256,6 +321,9 @@ CREATE TABLE timetable_slots (
 
 CREATE TABLE audit_logs (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  -- Denormalized (not just derived via user_id) so tenant scoping
+  -- survives even if the acting user is later deleted (user_id -> SET NULL).
+  school_id  UUID REFERENCES schools(id) ON DELETE SET NULL,
   user_id    UUID REFERENCES users(id) ON DELETE SET NULL,
   user_name  VARCHAR(255),
   role       user_role,
@@ -266,22 +334,30 @@ CREATE TABLE audit_logs (
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_users_email            ON users(email);
-CREATE INDEX idx_users_role             ON users(role);
-CREATE INDEX idx_learner_profiles_class ON learner_profiles(class_id);
-CREATE INDEX idx_class_subjects_teacher ON class_subjects(teacher_id);
-CREATE INDEX idx_class_subjects_class   ON class_subjects(class_id);
-CREATE INDEX idx_attendance_learner     ON attendance(learner_id);
-CREATE INDEX idx_attendance_date        ON attendance(date);
-CREATE INDEX idx_marks_learner          ON marks(learner_id);
-CREATE INDEX idx_marks_assessment       ON marks(assessment_id);
-CREATE INDEX idx_messages_recipient     ON messages(recipient_id);
-CREATE INDEX idx_messages_sender        ON messages(sender_id);
-CREATE INDEX idx_notifications_user     ON notifications(user_id);
-CREATE INDEX idx_notifications_unread   ON notifications(user_id) WHERE is_read = FALSE;
-CREATE INDEX idx_audit_logs_user        ON audit_logs(user_id);
-CREATE INDEX idx_audit_logs_created     ON audit_logs(created_at DESC);
-CREATE INDEX idx_payments_fee_account   ON payments(fee_account_id);
+CREATE INDEX idx_users_email              ON users(email);
+CREATE INDEX idx_users_role               ON users(role);
+CREATE INDEX idx_users_school             ON users(school_id);
+CREATE INDEX idx_learner_profiles_class   ON learner_profiles(class_id);
+CREATE INDEX idx_class_subjects_teacher   ON class_subjects(teacher_id);
+CREATE INDEX idx_class_subjects_class     ON class_subjects(class_id);
+CREATE INDEX idx_classes_school           ON classes(school_id);
+CREATE INDEX idx_grades_school            ON grades(school_id);
+CREATE INDEX idx_subjects_school          ON subjects(school_id);
+CREATE INDEX idx_attendance_learner       ON attendance(learner_id);
+CREATE INDEX idx_attendance_date          ON attendance(date);
+CREATE INDEX idx_marks_learner            ON marks(learner_id);
+CREATE INDEX idx_marks_assessment         ON marks(assessment_id);
+CREATE INDEX idx_messages_recipient       ON messages(recipient_id);
+CREATE INDEX idx_messages_sender          ON messages(sender_id);
+CREATE INDEX idx_notifications_user       ON notifications(user_id);
+CREATE INDEX idx_notifications_unread     ON notifications(user_id) WHERE is_read = FALSE;
+CREATE INDEX idx_audit_logs_user          ON audit_logs(user_id);
+CREATE INDEX idx_audit_logs_school        ON audit_logs(school_id);
+CREATE INDEX idx_audit_logs_created       ON audit_logs(created_at DESC);
+CREATE INDEX idx_payments_fee_account     ON payments(fee_account_id);
+CREATE INDEX idx_learner_applications_school ON learner_applications(school_id);
+CREATE INDEX idx_learner_applications_parent ON learner_applications(parent_id);
+CREATE INDEX idx_learner_applications_status ON learner_applications(status);
 
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
@@ -291,6 +367,8 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+CREATE TRIGGER trg_schools_updated_at
+  BEFORE UPDATE ON schools FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_users_updated_at
   BEFORE UPDATE ON users FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_classes_updated_at
@@ -301,6 +379,8 @@ CREATE TRIGGER trg_teacher_profiles_updated_at
   BEFORE UPDATE ON teacher_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_parent_profiles_updated_at
   BEFORE UPDATE ON parent_profiles FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+CREATE TRIGGER trg_learner_applications_updated_at
+  BEFORE UPDATE ON learner_applications FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_attendance_updated_at
   BEFORE UPDATE ON attendance FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 CREATE TRIGGER trg_assessments_updated_at
@@ -319,20 +399,20 @@ CREATE TRIGGER trg_events_updated_at
 -- ======================================================
 
 -- ===================== ACADEMIC YEARS =====================
--- Provides year-level scoping for terms across assessments,
--- report cards, expenses, and feedback.
 CREATE TABLE academic_years (
   id         UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  year       INTEGER NOT NULL UNIQUE,
+  school_id  UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  year       INTEGER NOT NULL,
   start_date DATE NOT NULL,
   end_date   DATE NOT NULL,
   is_current BOOLEAN NOT NULL DEFAULT FALSE,
-  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, year)
 );
 
--- Only one year can be current at a time
+-- Only one year can be current per school
 CREATE UNIQUE INDEX idx_academic_years_current
-  ON academic_years(is_current) WHERE is_current = TRUE;
+  ON academic_years(school_id) WHERE is_current = TRUE;
 
 -- ===================== ACHIEVEMENTS =====================
 CREATE TABLE achievements (
@@ -393,9 +473,11 @@ CREATE TABLE report_cards (
 -- ===================== EXPENSES =====================
 CREATE TABLE expense_categories (
   id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name        VARCHAR(100) NOT NULL UNIQUE,
+  school_id   UUID NOT NULL REFERENCES schools(id) ON DELETE CASCADE,
+  name        VARCHAR(100) NOT NULL,
   description TEXT,
-  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+  created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  UNIQUE (school_id, name)
 );
 
 CREATE TABLE expenses (
@@ -478,6 +560,9 @@ CREATE INDEX idx_teacher_feedback_teacher     ON teacher_feedback(teacher_id);
 CREATE INDEX idx_report_cards_learner         ON report_cards(learner_id);
 CREATE INDEX idx_expenses_category            ON expenses(category_id);
 CREATE INDEX idx_expenses_date                ON expenses(expense_date);
+CREATE INDEX idx_expense_categories_school    ON expense_categories(school_id);
+CREATE INDEX idx_fee_structures_school        ON fee_structures(school_id);
+CREATE INDEX idx_academic_years_school        ON academic_years(school_id);
 CREATE INDEX idx_support_tickets_raised_by    ON support_tickets(raised_by);
 CREATE INDEX idx_support_tickets_open         ON support_tickets(status) WHERE status IN ('open', 'in_progress');
 CREATE INDEX idx_password_reset_user          ON password_reset_tokens(user_id);
