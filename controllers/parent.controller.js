@@ -1,6 +1,126 @@
 const { query } = require('../db');
 
-// ─── Dashboard Stats ──────────────────────────────────────────
+// ─── School Search (for learner applications) ──────────────
+const searchSchools = async (req, res) => {
+  try {
+    const { q } = req.query;
+
+    if (!q || q.trim().length < 2)
+      return res.status(200).json({ success: true, schools: [] });
+
+    const result = await query(
+      `SELECT id, name, address
+       FROM schools
+       WHERE name ILIKE $1 OR address ILIKE $1
+       ORDER BY name ASC
+       LIMIT 10`,
+      [`%${q.trim()}%`]
+    );
+
+    return res.status(200).json({ success: true, schools: result.rows });
+  } catch (err) {
+    console.error('Parent searchSchools error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+// ─── Grades for a School (for learner applications) ────────
+const getSchoolGrades = async (req, res) => {
+  try {
+    const { id: schoolId } = req.params;
+
+    const result = await query(
+      `SELECT id, name, level
+       FROM grades
+       WHERE school_id = $1
+       ORDER BY level ASC`,
+      [schoolId]
+    );
+
+    return res.status(200).json({ success: true, grades: result.rows });
+  } catch (err) {
+    console.error('Parent getSchoolGrades error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+// ─── Submit Learner Application ─────────────────────────────
+const submitApplication = async (req, res) => {
+  try {
+    const {
+      school_id, first_name, last_name, date_of_birth,
+      gender, relationship, grade_requested_id,
+      previous_school, supporting_docs
+    } = req.body;
+
+    if (!school_id || !first_name || !last_name || !date_of_birth || !relationship) {
+      return res.status(400).json({
+        success: false,
+        message: 'School, child name, date of birth, and relationship are required.'
+      });
+    }
+
+    // Confirm the school exists before we insert against it
+    const school = await query(`SELECT id FROM schools WHERE id = $1`, [school_id]);
+    if (!school.rows[0])
+      return res.status(404).json({ success: false, message: 'Selected school was not found.' });
+
+    // If a grade was chosen, confirm it actually belongs to that school
+    if (grade_requested_id) {
+      const grade = await query(
+        `SELECT id FROM grades WHERE id = $1 AND school_id = $2`,
+        [grade_requested_id, school_id]
+      );
+      if (!grade.rows[0])
+        return res.status(400).json({ success: false, message: 'Selected grade does not belong to this school.' });
+    }
+
+    const result = await query(
+      `INSERT INTO learner_applications
+         (school_id, parent_id, first_name, last_name, date_of_birth,
+          gender, relationship, grade_requested_id, previous_school, supporting_docs)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+       RETURNING id, status, created_at`,
+      [
+        school_id, req.user.id, first_name.trim(), last_name.trim(), date_of_birth,
+        gender || null, relationship, grade_requested_id || null,
+        previous_school || null, supporting_docs || null
+      ]
+    );
+
+    return res.status(201).json({ success: true, application: result.rows[0] });
+  } catch (err) {
+    console.error('Parent submitApplication error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+// ─── Get My Applications ─────────────────────────────────────
+const getApplications = async (req, res) => {
+  try {
+    const result = await query(
+      `SELECT
+         la.id, la.first_name, la.last_name, la.date_of_birth, la.gender,
+         la.relationship, la.previous_school, la.status, la.admin_notes,
+         la.created_at, la.reviewed_at,
+         s.name  AS school_name,
+         s.address AS school_address,
+         g.name  AS grade_name
+       FROM learner_applications la
+       JOIN schools s      ON s.id = la.school_id
+       LEFT JOIN grades g  ON g.id = la.grade_requested_id
+       WHERE la.parent_id = $1
+       ORDER BY la.created_at DESC`,
+      [req.user.id]
+    );
+    return res.status(200).json({ success: true, applications: result.rows });
+  } catch (err) {
+    console.error('Parent getApplications error:', err.message);
+    return res.status(500).json({ success: false, message: 'Server error.' });
+  }
+};
+
+// ─── Dashboard Stats ─────────────────────────────────────
 const getDashboardStats = async (req, res) => {
   try {
     const parentId = req.user.id;
@@ -364,6 +484,10 @@ const markNotificationRead = async (req, res) => {
 };
 
 module.exports = {
+  searchSchools,
+  getSchoolGrades,
+  submitApplication,
+  getApplications,
   getDashboardStats,
   getChildren,
   getChildGrades,

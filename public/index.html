@@ -1542,6 +1542,7 @@
 
       <!-- Parent Pages -->
       <div id="page-parent-dashboard" class="page"></div>
+      <div id="page-parent-applications" class="page"></div>
       <div id="page-parent-reports" class="page"></div>
       <div id="page-parent-payments" class="page"></div>
       <div id="page-parent-events" class="page"></div>
@@ -1613,7 +1614,7 @@ const DB = {
     leaderboard: [],
     resources: [],
   },
-  parent: {
+ parent: {
     childSubjects: [],
     alerts: [],
     upcomingEvents: [],
@@ -1621,6 +1622,8 @@ const DB = {
     notices: [],
     paymentSchedule: [],
     transactions: [],
+    applications: [],
+    schools: [],
   },
   admin: {
     users: [],
@@ -1747,6 +1750,7 @@ const roleConfig = {
     nav: [
       { section: 'Overview' },
       { id: 'parent-dashboard', label: 'Dashboard', icon: 'fa-home' },
+      { id: 'parent-applications', label: 'Add Learner', icon: 'fa-user-plus' },
       { id: 'parent-reports', label: 'Academic Reports', icon: 'fa-chart-pie' },
       { id: 'parent-payments', label: 'Payments', icon: 'fa-credit-card' },
       { section: 'School' },
@@ -1981,7 +1985,8 @@ function navigate(pageId) {
     'learner-dashboard': 'Dashboard', 'learner-progress': 'My Progress',
     'learner-resources': 'Resources', 'learner-achievements': 'Achievements',
     'learner-timetable': 'Timetable',
-    'parent-dashboard': 'Dashboard', 'parent-reports': 'Academic Reports',
+    'parent-dashboard': 'Dashboard', 'parent-applications': 'Add Learner',
+    'parent-reports': 'Academic Reports',
     'parent-payments': 'Payments', 'parent-events': 'Events',
     'parent-messages': 'Messages',
     'admin-dashboard': 'Dashboard', 'admin-users': 'User Management',
@@ -2645,6 +2650,309 @@ const pageRenderers = {
         ]
       );
     }, 100);
+  },
+
+  /* ========== PARENT APPLICATIONS (ADD LEARNER) ========== */
+  'parent-applications': (el) => {
+    el.innerHTML = `
+    <div class="page-header"><h1>Add a Learner</h1><p>Search for your child's school and submit an application to link their account to yours</p></div>
+
+    <div class="grid-2-1">
+      <div class="card">
+        <div class="card-header"><div class="card-title">New Application</div></div>
+
+        <div class="form-group">
+          <label>Search for School</label>
+          <div class="input-wrap">
+            <i class="fas fa-search"></i>
+            <input type="text" id="pa_schoolSearch" placeholder="Type a school name or address..." autocomplete="off" />
+          </div>
+          <div id="pa_schoolResults" style="display:flex;flex-direction:column;gap:6px;margin-top:8px"></div>
+        </div>
+
+        <div id="pa_selectedSchoolWrap" class="hidden" style="margin-bottom:18px">
+          <div style="display:flex;align-items:center;justify-content:space-between;background:var(--accent-soft);border:1px solid var(--accent);border-radius:var(--radius-sm);padding:10px 14px">
+            <div>
+              <div style="font-size:12px;color:var(--muted)">Selected School</div>
+              <div id="pa_selectedSchoolName" style="font-weight:700;font-size:14px;color:var(--accent)"></div>
+            </div>
+            <button type="button" class="btn btn-secondary" style="padding:6px 12px;font-size:11px" onclick="clearSelectedSchool()"><i class="fas fa-times"></i> Change</button>
+          </div>
+        </div>
+
+        <form id="pa_form" onsubmit="submitApplicationForm(event)">
+          <div class="register-grid">
+            <div class="form-group">
+              <label>Child's First Name</label>
+              <div class="input-wrap">
+                <i class="fas fa-user"></i>
+                <input type="text" name="first_name" placeholder="First name" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Child's Last Name</label>
+              <div class="input-wrap">
+                <i class="fas fa-user"></i>
+                <input type="text" name="last_name" placeholder="Last name" required />
+              </div>
+            </div>
+          </div>
+
+          <div class="register-grid">
+            <div class="form-group">
+              <label>Date of Birth</label>
+              <div class="input-wrap">
+                <i class="fas fa-calendar"></i>
+                <input type="date" name="date_of_birth" required />
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Gender <span style="color:var(--muted);font-size:11px">(optional)</span></label>
+              <div class="input-wrap">
+                <i class="fas fa-venus-mars"></i>
+                <select name="gender" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px 12px 40px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;appearance:none;cursor:pointer">
+                  <option value="">Prefer not to say…</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-group" id="pa_gradeFieldWrap">
+            <label>Requested Grade</label>
+            <div class="input-wrap">
+              <i class="fas fa-layer-group"></i>
+              <select name="grade_requested_id" id="pa_gradeSelect" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px 12px 40px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;appearance:none;cursor:pointer" disabled>
+                <option value="">Select a school first…</option>
+              </select>
+            </div>
+            <div id="pa_gradeNote" style="font-size:11px;color:var(--muted);margin-top:6px"></div>
+          </div>
+
+          <div class="form-group">
+            <label>Your Relationship to Child</label>
+            <div class="input-wrap">
+              <i class="fas fa-users"></i>
+              <select name="relationship" required style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px 12px 40px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;appearance:none;cursor:pointer">
+                <option value="">Select relationship…</option>
+                <option value="Mother">Mother</option>
+                <option value="Father">Father</option>
+                <option value="Legal Guardian">Legal Guardian</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Previous School <span style="color:var(--muted);font-size:11px">(optional)</span></label>
+            <div class="input-wrap">
+              <i class="fas fa-school"></i>
+              <input type="text" name="previous_school" placeholder="If transferring from another school..." />
+            </div>
+          </div>
+
+          <div id="pa_formError" class="reg-error"></div>
+
+          <button type="submit" class="btn-login" style="margin-top:4px" id="pa_submitBtn">
+            <i class="fas fa-paper-plane" style="margin-right:6px"></i> Submit Application
+          </button>
+        </form>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">How It Works</div></div>
+        <div style="display:flex;flex-direction:column;gap:14px;font-size:13px;color:var(--muted)">
+          <div style="display:flex;gap:10px"><i class="fas fa-search text-accent" style="width:16px;margin-top:2px"></i><span>Find your child's school and select it above.</span></div>
+          <div style="display:flex;gap:10px"><i class="fas fa-file-alt text-accent" style="width:16px;margin-top:2px"></i><span>Fill in your child's details and submit the application.</span></div>
+          <div style="display:flex;gap:10px"><i class="fas fa-user-check text-accent" style="width:16px;margin-top:2px"></i><span>The school's admin reviews and confirms the relationship.</span></div>
+          <div style="display:flex;gap:10px"><i class="fas fa-check-circle text-accent" style="width:16px;margin-top:2px"></i><span>Once approved, your child's learner account activates and appears on your dashboard.</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">My Applications</div></div>
+      <div id="pa_applicationsList" class="table-wrap">
+        <div style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><i class="fas fa-spinner fa-spin"></i> Loading your applications...</div>
+      </div>
+    </div>`;
+
+    // ── State for this render ──
+    window._paSelectedSchool = null;
+    let searchDebounce = null;
+
+    function authHeaders() {
+      const token = localStorage.getItem('edutrack_token');
+      return { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token };
+    }
+
+    // ── School search (debounced, hits the real endpoint) ──
+    const searchInput = document.getElementById('pa_schoolSearch');
+    searchInput.addEventListener('input', () => {
+      clearTimeout(searchDebounce);
+      const q = searchInput.value.trim();
+      const resultsEl = document.getElementById('pa_schoolResults');
+      if (q.length < 2) { resultsEl.innerHTML = ''; return; }
+      resultsEl.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 2px"><i class="fas fa-spinner fa-spin"></i> Searching...</div>`;
+      searchDebounce = setTimeout(() => runSchoolSearch(q), 350);
+    });
+
+    async function runSchoolSearch(q) {
+      const resultsEl = document.getElementById('pa_schoolResults');
+      try {
+        const res = await fetch(`/api/parent/schools/search?q=${encodeURIComponent(q)}`, { headers: authHeaders() });
+        const data = await res.json();
+        if (!data.success) { resultsEl.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 2px">Search failed. Try again.</div>`; return; }
+        const schools = data.schools || [];
+        window._paLastResults = schools;
+        resultsEl.innerHTML = schools.length ? schools.map(s => `
+          <div onclick="selectSchool('${s.id}')" style="cursor:pointer;padding:10px 12px;background:var(--surface2);border-radius:8px;display:flex;justify-content:space-between;align-items:center;transition:background var(--transition)" onmouseover="this.style.background='var(--accent-soft)'" onmouseout="this.style.background='var(--surface2)'">
+            <div><div style="font-size:13px;font-weight:600">${s.name}</div><div style="font-size:11px;color:var(--muted)">${s.address || ''}</div></div>
+            <i class="fas fa-chevron-right" style="color:var(--muted);font-size:11px"></i>
+          </div>`).join('') : `<div style="font-size:12px;color:var(--muted);padding:8px 2px">No schools found matching "${q}".</div>`;
+      } catch (err) {
+        resultsEl.innerHTML = `<div style="font-size:12px;color:var(--muted);padding:8px 2px">Unable to reach the server.</div>`;
+      }
+    }
+
+    window.selectSchool = async function(schoolId) {
+      const school = (window._paLastResults || []).find(s => s.id === schoolId);
+      if (!school) return;
+      window._paSelectedSchool = school;
+      document.getElementById('pa_selectedSchoolName').textContent = school.address ? `${school.name} — ${school.address}` : school.name;
+      document.getElementById('pa_selectedSchoolWrap').classList.remove('hidden');
+      document.getElementById('pa_schoolSearch').value = '';
+      document.getElementById('pa_schoolResults').innerHTML = '';
+      await loadGradesForSchool(schoolId);
+    };
+
+    window.clearSelectedSchool = function() {
+      window._paSelectedSchool = null;
+      document.getElementById('pa_selectedSchoolWrap').classList.add('hidden');
+      const gradeSelect = document.getElementById('pa_gradeSelect');
+      gradeSelect.innerHTML = `<option value="">Select a school first…</option>`;
+      gradeSelect.disabled = true;
+      document.getElementById('pa_gradeNote').textContent = '';
+    };
+
+    // ── Load real grades for the selected school ──
+    async function loadGradesForSchool(schoolId) {
+      const gradeSelect = document.getElementById('pa_gradeSelect');
+      const gradeNote = document.getElementById('pa_gradeNote');
+      gradeSelect.innerHTML = `<option value="">Loading grades...</option>`;
+      gradeSelect.disabled = true;
+      gradeNote.textContent = '';
+      try {
+        const res = await fetch(`/api/parent/schools/${schoolId}/grades`, { headers: authHeaders() });
+        const data = await res.json();
+        const grades = (data.success && data.grades) ? data.grades : [];
+        if (!grades.length) {
+          gradeSelect.innerHTML = `<option value="">Not available yet</option>`;
+          gradeSelect.disabled = true;
+          gradeNote.textContent = 'This school has not published grade levels yet — the admin will assign a grade during review.';
+        } else {
+          gradeSelect.innerHTML = `<option value="">Select grade…</option>` +
+            grades.map(g => `<option value="${g.id}">${g.name}</option>`).join('');
+          gradeSelect.disabled = false;
+        }
+      } catch (err) {
+        gradeSelect.innerHTML = `<option value="">Unable to load grades</option>`;
+        gradeNote.textContent = 'Could not reach the server — you can still submit without selecting a grade.';
+      }
+    }
+
+    // ── Submit ──
+    window.submitApplicationForm = async function(e) {
+      e.preventDefault();
+      const errEl = document.getElementById('pa_formError');
+      const submitBtn = document.getElementById('pa_submitBtn');
+      errEl.textContent = '';
+
+      if (!window._paSelectedSchool) {
+        errEl.textContent = 'Please select a school before submitting.';
+        return;
+      }
+      const f = e.target;
+      const payload = {
+        school_id: window._paSelectedSchool.id,
+        first_name: f.first_name.value.trim(),
+        last_name: f.last_name.value.trim(),
+        date_of_birth: f.date_of_birth.value,
+        gender: f.gender.value || null,
+        grade_requested_id: f.grade_requested_id.value || null,
+        relationship: f.relationship.value,
+        previous_school: f.previous_school.value.trim() || null,
+      };
+
+      if (!payload.first_name || !payload.last_name || !payload.date_of_birth || !payload.relationship) {
+        errEl.textContent = 'Please fill in all required fields.';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.innerHTML = `<i class="fas fa-spinner fa-spin" style="margin-right:6px"></i> Submitting...`;
+
+      try {
+        const res = await fetch('/api/parent/applications', {
+          method: 'POST',
+          headers: authHeaders(),
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+
+        if (!data.success) {
+          errEl.textContent = data.message || 'Could not submit application.';
+          return;
+        }
+
+        f.reset();
+        window.clearSelectedSchool();
+        showToast(`Application submitted for ${payload.first_name} ${payload.last_name}.`, 'success');
+        await loadApplicationsList();
+      } catch (err) {
+        errEl.textContent = 'Unable to reach the server. Please try again.';
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.innerHTML = `<i class="fas fa-paper-plane" style="margin-right:6px"></i> Submit Application`;
+      }
+    };
+
+    // ── Load applications list ──
+    async function loadApplicationsList() {
+      const listEl = document.getElementById('pa_applicationsList');
+      try {
+        const res = await fetch('/api/parent/applications', { headers: authHeaders() });
+        const data = await res.json();
+        const apps = (data.success && data.applications) ? data.applications : [];
+
+        if (!apps.length) {
+          listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px"><i class="fas fa-inbox"></i> No applications submitted yet.</div>`;
+          return;
+        }
+
+        listEl.innerHTML = `
+          <table>
+            <thead><tr><th>Child</th><th>School</th><th>Grade</th><th>Relationship</th><th>Submitted</th><th>Status</th></tr></thead>
+            <tbody>
+              ${apps.map(a => `
+              <tr>
+                <td>${a.first_name} ${a.last_name}</td>
+                <td>${a.school_name}<div style="font-size:11px;color:var(--muted)">${a.school_address || ''}</div></td>
+                <td>${a.grade_name || '<span style="color:var(--muted)">Not assigned yet</span>'}</td>
+                <td>${a.relationship}</td>
+                <td>${new Date(a.created_at).toLocaleDateString('en-ZA', { day: 'numeric', month: 'short', year: 'numeric' })}</td>
+                <td><span class="badge ${a.status==='approved'?'badge-green':a.status==='rejected'?'badge-red':'badge-yellow'}">${a.status.charAt(0).toUpperCase()+a.status.slice(1)}</span></td>
+              </tr>`).join('')}
+            </tbody>
+          </table>`;
+      } catch (err) {
+        listEl.innerHTML = `<div style="text-align:center;padding:32px;color:var(--muted);font-size:13px">Could not load applications — check your connection.</div>`;
+      }
+    }
+
+    loadApplicationsList();
   },
 
   /* ========== PARENT PAYMENTS ========== */

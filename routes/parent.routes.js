@@ -27,6 +27,22 @@ const notificationReadValidation = [
   param('id').isInt().withMessage('Notification ID must be a valid integer.'),
 ];
 
+const applicationValidation = [
+  body('school_id').isUUID().withMessage('A valid school must be selected.'),
+  body('first_name').trim().notEmpty().withMessage("Child's first name is required."),
+  body('last_name').trim().notEmpty().withMessage("Child's last name is required."),
+  body('date_of_birth').isDate().withMessage('A valid date of birth is required.'),
+  body('relationship').trim().notEmpty().withMessage('Relationship to child is required.'),
+  body('grade_requested_id').optional({ nullable: true }).isUUID().withMessage('Invalid grade selected.'),
+  body('gender').optional({ nullable: true }).trim(),
+  body('previous_school').optional({ nullable: true }).trim(),
+  body('supporting_docs').optional({ nullable: true }).trim(),
+];
+
+router.get('/schools/search',           controller.searchSchools);
+router.get('/schools/:id/grades',       controller.getSchoolGrades);
+router.post('/applications', applicationValidation, validateRequest, controller.submitApplication);
+router.get('/applications',             controller.getApplications);
 router.get('/dashboard/stats',          controller.getDashboardStats);
 router.get('/children',                 controller.getChildren);
 router.get('/children/:id/grades',      childIdValidation, validateRequest, controller.getChildGrades);
